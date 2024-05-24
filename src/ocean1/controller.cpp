@@ -4,24 +4,25 @@
  * 
  */
 
-#include <Sai2Model.h>
-#include "Sai2Primitives.h"
-#include "redis/RedisClient.h"
-#include "timer/LoopTimer.h"
-
 #include <iostream>
-#include <string>
+#include <mutex>
 #include <random>
+#include <Sai2Model.h>
+#include <signal.h>
+#include <string>
+
+#include "Sai2Primitives.h"
+#include "redis_keys.h"
+#include "redis/RedisClient.h"
+#include "redis/keys/chai_haptic_devices_driver.h"
+#include "timer/LoopTimer.h"
 
 using namespace std;
 using namespace Eigen;
 using namespace Sai2Primitives;
 
-#include <signal.h>
 bool runloop = false;
 void sighandler(int){runloop = false;}
-
-#include "redis_keys.h"
 
 // States 
 enum State {
@@ -47,6 +48,7 @@ Eigen::VectorXd generateRandomVector(double lowerBound, double upperBound, int s
 int main() {
 	// Location of URDF files specifying world and robot information
 	static const string robot_file = string(CS225A_URDF_FOLDER) + "/ocean1/ocean1.urdf";
+    static const string link_name = "end-effector";
 
 	// initial state 
 	int state = POSTURE;
@@ -71,6 +73,47 @@ int main() {
 	int dof = robot->dof();
 	VectorXd command_torques = VectorXd::Zero(dof); 
 	MatrixXd N_prec = MatrixXd::Identity(dof, dof);
+
+    // create haptic controller
+    Sai2Primitives::HapticDeviceController::DeviceLimits device_limits(
+		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_STIFFNESS_KEY_SUFFIX, 0)),
+		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_DAMPING_KEY_SUFFIX, 0)),
+		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_FORCE_KEY_SUFFIX, 0)));
+    auto haptic_controller =
+		make_shared<Sai2Primitives::HapticDeviceController>(
+			device_limits, robot->transformInWorld(link_name));
+	haptic_controller->setScalingFactors(3.5);
+	haptic_controller->setHapticControlType(
+		Sai2Primitives::HapticControlType::HOMING);
+	haptic_controller->disableOrientationTeleop();
+	Vector3i directions_of_proxy_feedback = Vector3i::Zero();
+
+    Sai2Primitives::HapticControllerInput haptic_input;
+	Sai2Primitives::HapticControllerOtuput haptic_output;
+	bool haptic_button_was_pressed = false;
+	int haptic_button_is_pressed = 0;
+	redis_client.setInt(Sai2Common::ChaiHapticDriverKeys::createRedisKey(SWITCH_PRESSED_KEY_SUFFIX, 0),
+						haptic_button_is_pressed);
+	redis_client.setInt(Sai2Common::ChaiHapticDriverKeys::createRedisKey(USE_GRIPPER_AS_SWITCH_KEY_SUFFIX, 0), 1);
+
+    // setup redis communication
+	redis_client.addToSendGroup(Sai2Common::ChaiHapticDriverKeys::createRedisKey(COMMANDED_FORCE_KEY_SUFFIX, 0),
+								haptic_output.device_command_force);
+	redis_client.addToSendGroup(Sai2Common::ChaiHapticDriverKeys::createRedisKey(COMMANDED_TORQUE_KEY_SUFFIX, 0),
+								haptic_output.device_command_moment);
+
+	redis_client.addToReceiveGroup(Sai2Common::ChaiHapticDriverKeys::createRedisKey(POSITION_KEY_SUFFIX, 0),
+								   haptic_input.device_position);
+	redis_client.addToReceiveGroup(Sai2Common::ChaiHapticDriverKeys::createRedisKey(ROTATION_KEY_SUFFIX, 0),
+								   haptic_input.device_orientation);
+	redis_client.addToReceiveGroup(
+		Sai2Common::ChaiHapticDriverKeys::createRedisKey(LINEAR_VELOCITY_KEY_SUFFIX, 0),
+		haptic_input.device_linear_velocity);
+	redis_client.addToReceiveGroup(
+		Sai2Common::ChaiHapticDriverKeys::createRedisKey(ANGULAR_VELOCITY_KEY_SUFFIX, 0),
+		haptic_input.device_angular_velocity);
+	redis_client.addToReceiveGroup(Sai2Common::ChaiHapticDriverKeys::createRedisKey(SWITCH_PRESSED_KEY_SUFFIX, 0),
+								   haptic_button_is_pressed);
 
 	// create map for arm pose tasks
     std::map<std::string, std::shared_ptr<Sai2Primitives::MotionForceTask>> pose_tasks;
@@ -125,6 +168,23 @@ int main() {
 		robot->setQ(redis_client.getEigen(JOINT_ANGLES_KEY));
 		robot->setDq(redis_client.getEigen(JOINT_VELOCITIES_KEY));
 		robot->updateModel();
+
+        // read haptic device state from Redis
+		redis_client.receiveAllFromGroup();
+
+        // compute haptic control
+		haptic_input.robot_position = robot->positionInWorld(link_name);
+		haptic_input.robot_orientation = robot->rotationInWorld(link_name);
+		haptic_input.robot_linear_velocity =
+			robot->linearVelocityInWorld(link_name);
+		haptic_input.robot_angular_velocity =
+			robot->angularVelocityInWorld(link_name);
+		haptic_input.robot_sensed_force = Vector3d::Zero();
+		haptic_input.robot_sensed_moment = Vector3d::Zero();
+
+		haptic_output = haptic_controller->computeHapticControl(haptic_input);
+
+		redis_client.sendAllFromGroup();
 	
 		if (state == POSTURE) {
 			// update task model 
@@ -173,12 +233,18 @@ int main() {
             // pose tasks
             int i = 0;
             for (auto name : control_links) {
-                pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + generateRandomVector(-0.05, 0.05, 3));
-                // pose_tasks[name]->setGoalOrientation();
+                pose_tasks[name]->setGoalPosition(
+                    haptic_output.robot_goal_position);
+                pose_tasks[name]->setGoalOrientation(
+                    haptic_output.robot_goal_orientation);
                 command_torques += pose_tasks[name]->computeTorques();
                 ++i;
             }
-            
+
+            // TODO (tashakim): set up haptic feedback
+
+            // TODO (tashakim): set up state machine for button press
+
             // posture task and coriolis compensation
             command_torques += posture_task->computeTorques() + robot->coriolisForce();
         }
@@ -191,6 +257,11 @@ int main() {
 	cout << "\nSimulation loop timer stats:\n";
 	timer.printInfoPostRun();
 	redis_client.setEigen(JOINT_TORQUES_COMMANDED_KEY, 0 * command_torques);  // back to floating
+    redis_client.setEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(COMMANDED_FORCE_KEY_SUFFIX, 0),
+						  Vector3d::Zero());
+    redis_client.setEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(COMMANDED_TORQUE_KEY_SUFFIX, 0),
+						  Vector3d::Zero());
+	redis_client.setInt(Sai2Common::ChaiHapticDriverKeys::createRedisKey(USE_GRIPPER_AS_SWITCH_KEY_SUFFIX, 0), 0);
 
 	return 0;
 }

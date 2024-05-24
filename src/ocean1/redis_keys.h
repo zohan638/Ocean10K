@@ -1,15 +1,16 @@
-/**
- * @file redis_keys.h
- * @author William Chong (williamchong@stanford.edu)
- * @brief 
- * @version 0.1
- * @date 2022-04-30
- * 
- * @copyright Copyright (c) 2022
- * 
- */
-
+// Add Redis keys here
 const std::string JOINT_ANGLES_KEY = "sai2::sim::ocean1::sensors::q";
 const std::string JOINT_VELOCITIES_KEY = "sai2::sim::ocean1::sensors::dq";
 const std::string JOINT_TORQUES_COMMANDED_KEY = "sai2::sim::ocean1::actuators::fgc";
 const std::string CONTROLLER_RUNNING_KEY = "sai2::sim::ocean1::controller";
+const std::string MAX_STIFFNESS_KEY_SUFFIX = "sai2::sim::ocean1::max_stiff";
+const std::string MAX_DAMPING_KEY_SUFFIX = "sai2::sim::ocean1::max_damp";
+const std::string MAX_FORCE_KEY_SUFFIX = "sai2::sim::ocean1::max_f";
+const std::string SWITCH_PRESSED_KEY_SUFFIX = "sai2::sim::ocean1::switch_pressed";
+const std::string USE_GRIPPER_AS_SWITCH_KEY_SUFFIX = "sai2::sim::ocean1::use_gripper_as_key";
+const std::string COMMANDED_FORCE_KEY_SUFFIX = "sai2::sim::ocean1::commanded_f";
+const std::string COMMANDED_TORQUE_KEY_SUFFIX = "sai2::sim::ocean1::commanded_t";
+const std::string POSITION_KEY_SUFFIX = "sai2::sim::ocean1::pos";
+const std::string ROTATION_KEY_SUFFIX = "sai2::sim::ocean1::rot";
+const std::string LINEAR_VELOCITY_KEY_SUFFIX = "sai2::sim::ocean1::lin_v";
+const std::string ANGULAR_VELOCITY_KEY_SUFFIX = "sai2::sim::ocean1::ang_v";
