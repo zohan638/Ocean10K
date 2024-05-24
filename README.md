@@ -7,6 +7,7 @@
 This project depends on sai2 libraries. The install instructions can be found
 [here](https://github.com/manips-sai-org/OpenSai).
 
+
 ## Build Instructions
 Navigate to the `build` directory, then make by:
 ```
@@ -14,8 +15,42 @@ cd build
 cmake .. && make -j4
 ```
 
+
+## Interfacing with Haptic Controllers
+
+1. Clone the chai3d wrapper:
+```
+git clone
+https://github.com/manips-sai-org/chaiHapticdeviceRedisDriver.git
+```
+
+2. Install all dependencies:
+```
+sudo apt-get install cmake redis redis-server libhiredis-dev libjsoncpp-dev
+```
+
+3. From the source directory, create a build directory and make:
+```
+cd chaiHapticdeviceRedisDriver
+mkdir build && cd build
+cmake .. && make -j4
+```
+
+4. Start the Redis server:
+```
+redis-server
+```
+
+5. Plug in the haptic device to your device (e.g. laptop) and power it on.
+
+6. From the build directory, run:
+```
+sudo ./chai_devices_redis_server
+```
+
+
 ## Running the Project
-1. Start Redis server:
+1. Start Redis server (if not already running):
 ```
 redis-server
 ```
