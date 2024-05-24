@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1"
-  "/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1.pdb"
+  "/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1"
+  "/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1.pdb"
   "CMakeFiles/simviz_ocean1.dir/simviz.cpp.o"
   "CMakeFiles/simviz_ocean1.dir/simviz.cpp.o.d"
 )

@@ -90,46 +90,46 @@ simviz_ocean1_OBJECTS = \
 # External object files for target simviz_ocean1
 simviz_ocean1_EXTERNAL_OBJECTS =
 
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: src/ocean1/CMakeFiles/simviz_ocean1.dir/simviz.cpp.o
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: src/ocean1/CMakeFiles/simviz_ocean1.dir/build.make
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-interfaces/build/libsai2-interfaces.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-primitives/build/libsai2-primitives.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-primitives/ruckig/build/libruckig.dylib
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-simulation/build/libsai2-simulation.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-simulation/lib/macOS/arm64/libsai2-simulation-core.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-graphics/build/libsai2-graphics.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /opt/homebrew/lib/libglfw.dylib
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/chai3d/build/libchai3d.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-model/build/libsai2-model.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-model/rbdl/build/librbdl.dylib
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-urdfreader/build/libsai2-urdf.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /opt/homebrew/lib/libtinyxml2.dylib
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-common/build/libsai2-common.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /opt/homebrew/lib/libjsoncpp.dylib
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /opt/homebrew/lib/libhiredis.dylib
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /opt/homebrew/lib/libhiredis.dylib
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /opt/homebrew/lib/libglfw.dylib
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-model/build/libsai2-model.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-model/rbdl/build/librbdl.dylib
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-graphics/build/libsai2-graphics.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /opt/homebrew/lib/libglfw.dylib
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-simulation/build/libsai2-simulation.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-simulation/lib/macOS/arm64/libsai2-simulation-core.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-common/build/libsai2-common.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /opt/homebrew/lib/libjsoncpp.dylib
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /opt/homebrew/lib/libhiredis.dylib
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-urdfreader/build/libsai2-urdf.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /opt/homebrew/lib/libtinyxml2.dylib
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/chai3d/build/libchai3d.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /opt/homebrew/lib/libhiredis.dylib
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-primitives/build/libsai2-primitives.a
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-primitives/ruckig/build/libruckig.dylib
-/Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1: src/ocean1/CMakeFiles/simviz_ocean1.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/tashakim/CS225A-Project/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable /Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1"
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: src/ocean1/CMakeFiles/simviz_ocean1.dir/simviz.cpp.o
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: src/ocean1/CMakeFiles/simviz_ocean1.dir/build.make
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-interfaces/build/libsai2-interfaces.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-primitives/build/libsai2-primitives.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-primitives/ruckig/build/libruckig.dylib
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-simulation/build/libsai2-simulation.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-simulation/lib/macOS/arm64/libsai2-simulation-core.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-graphics/build/libsai2-graphics.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /opt/homebrew/lib/libglfw.dylib
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/chai3d/build/libchai3d.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-model/build/libsai2-model.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-model/rbdl/build/librbdl.dylib
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-urdfreader/build/libsai2-urdf.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /opt/homebrew/lib/libtinyxml2.dylib
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-common/build/libsai2-common.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /opt/homebrew/lib/libjsoncpp.dylib
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /opt/homebrew/lib/libhiredis.dylib
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /opt/homebrew/lib/libhiredis.dylib
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /opt/homebrew/lib/libglfw.dylib
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-model/build/libsai2-model.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-model/rbdl/build/librbdl.dylib
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-graphics/build/libsai2-graphics.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /opt/homebrew/lib/libglfw.dylib
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-simulation/build/libsai2-simulation.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-simulation/lib/macOS/arm64/libsai2-simulation-core.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-common/build/libsai2-common.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /opt/homebrew/lib/libjsoncpp.dylib
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /opt/homebrew/lib/libhiredis.dylib
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-urdfreader/build/libsai2-urdf.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /opt/homebrew/lib/libtinyxml2.dylib
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/chai3d/build/libchai3d.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /opt/homebrew/lib/libhiredis.dylib
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-primitives/build/libsai2-primitives.a
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: /Users/tashakim/OpenSai/core/sai2-primitives/ruckig/build/libruckig.dylib
+/Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1: src/ocean1/CMakeFiles/simviz_ocean1.dir/link.txt
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --green --bold --progress-dir=/Users/tashakim/CS225A-Project/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_2) "Linking CXX executable /Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1"
 	cd /Users/tashakim/CS225A-Project/build/src/ocean1 && $(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/simviz_ocean1.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
-src/ocean1/CMakeFiles/simviz_ocean1.dir/build: /Users/tashakim/CS225A-Project/bin/ocean1_example/simviz_ocean1
+src/ocean1/CMakeFiles/simviz_ocean1.dir/build: /Users/tashakim/CS225A-Project/bin/ocean1/simviz_ocean1
 .PHONY : src/ocean1/CMakeFiles/simviz_ocean1.dir/build
 
 src/ocean1/CMakeFiles/simviz_ocean1.dir/clean:

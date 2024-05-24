@@ -1,6 +1,6 @@
 file(REMOVE_RECURSE
-  "/Users/tashakim/CS225A-Project/bin/ocean1_example/controller_ocean1"
-  "/Users/tashakim/CS225A-Project/bin/ocean1_example/controller_ocean1.pdb"
+  "/Users/tashakim/CS225A-Project/bin/ocean1/controller_ocean1"
+  "/Users/tashakim/CS225A-Project/bin/ocean1/controller_ocean1.pdb"
   "CMakeFiles/controller_ocean1.dir/controller.cpp.o"
   "CMakeFiles/controller_ocean1.dir/controller.cpp.o.d"
 )
