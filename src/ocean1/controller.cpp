@@ -10,6 +10,8 @@
 #include <Sai2Model.h>
 #include <signal.h>
 #include <string>
+#include <fstream>
+#include <thread>
 
 #include "Sai2Primitives.h"
 #include "redis_keys.h"
@@ -120,6 +122,40 @@ int main() {
 
     const std::vector<std::string> control_links = {"endEffector_left", "endEffector_right"};
     const std::vector<Vector3d> control_points = {Vector3d(0, 0, 0), Vector3d(0, 0, 0)};
+    const std::vector<Vector3d> ee_average_control_point = {Vector3d(0, 0, 1)};
+
+    	//NEW CODE
+    int k = 0;
+
+    Vector3d goalBodyOrientation;
+
+    Vector3d endEffectorPosSum;
+    endEffectorPosSum = Vector3d(0, 0, 0);
+
+    for (auto name : control_links) {
+        endEffectorPosSum += robot->position(control_links[k], control_points[k]);
+        ++k;
+    }
+
+    Vector3d endEffectorPosAverage;
+    endEffectorPosAverage = endEffectorPosSum/2;
+
+    const std::string body_control_link = "Body";
+    const std::vector<Vector3d> body_control_point = {Vector3d(0, 0, 0)};
+    const std::vector<Vector3d> head_control_point = {Vector3d(0, 0, 1)};
+
+    Vector3d initialBodyPosition;
+    initialBodyPosition = Vector3d(robot->position(body_control_link, body_control_point[0]));
+
+    Vector3d initialHeadPosition;
+    initialHeadPosition = Vector3d(robot->position(body_control_link, head_control_point[0]));
+
+    Vector3d endEffectorToBodyDistance;
+    endEffectorToBodyDistance = endEffectorPosAverage - initialBodyPosition;
+
+    Vector3d goalBodyPosition;
+    goalBodyPosition = endEffectorPosAverage - endEffectorToBodyDistance;	
+	//END NEW CODE
 
     for (int i = 0; i < control_links.size(); ++i) {        
         Affine3d compliant_frame = Affine3d::Identity();
@@ -204,9 +240,53 @@ int main() {
 			}
 		} else if (state == MOTION) {
             // update body task model
-            N_prec.setIdentity();
-            base_task->updateTaskModel(N_prec);
-            N_prec = base_task->getTaskAndPreviousNullspace();
+			//NEW CODE
+		int j = 0;
+
+		endEffectorPosSum = Vector3d(0, 0, 0);
+		for (auto name : control_links) {
+			endEffectorPosSum += robot->position(control_links[j], control_points[j]);
+			++j;
+		}	
+
+		endEffectorPosAverage = endEffectorPosSum/2;
+
+		int l = 0;
+		Vector3d worldEndEffectorPosSum;
+		Vector3d worldEndEffectorPosAverage;
+		worldEndEffectorPosSum = Vector3d(0, 0, 0);
+		for (auto name : control_links) {
+			worldEndEffectorPosSum += robot->positionInWorld(control_links[l], control_points[l]);
+			++l;
+		}	
+
+		worldEndEffectorPosAverage = worldEndEffectorPosSum/2;
+			
+
+			// Get the position of the body's head
+                Vector3d headPosition = robot->position("Body", Vector3d(0, 0, 1)); 
+
+            // Compute the direction vector from the body's head to the average end effector position
+                Vector3d direction = (endEffectorPosAverage - headPosition).normalized();
+
+            // Compute the current body orientation
+                Matrix3d currentOrientation = robot->rotation("Body");
+
+            // Compute the desired orientation
+                Vector3d currentDirection = currentOrientation.col(2); // Assuming the body's forward direction is along the Z-axis
+                Matrix3d rotationMatrix = compute_rotation_matrix(currentDirection, direction);
+
+                 Matrix3d desiredOrientation = rotationMatrix * currentOrientation;
+
+		goalBodyPosition = endEffectorPosAverage - endEffectorToBodyDistance;	
+		cout << robot->position("Body", Vector3d(0.7, 0, 0.5));
+		
+
+                N_prec.setIdentity();
+			
+                base_task->updateTaskModel(N_prec); //base task is set to identity meaning its highest priority
+                N_prec = base_task->getTaskAndPreviousNullspace(); //Everything that uses N_prec is lower priority
+		base_task->setGoalPosition(Vector6d(goalBodyPosition[0], goalBodyPosition[1], goalBodyPosition[2], -goalBodyOrientation[1], goalBodyOrientation[0], goalBodyOrientation[2]));
 
             // update pose task models
             for (auto it = pose_tasks.begin(); it != pose_tasks.end(); ++it) {
@@ -237,6 +317,9 @@ int main() {
                     haptic_output.robot_goal_position);
                 pose_tasks[name]->setGoalOrientation(
                     haptic_output.robot_goal_orientation);
+                pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d(0, (-0.2 * cos(M_PI * time)), (0.2 * sin(M_PI * time))));
+		//pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d((-0.2 * cos(M_PI * time)), 0, (0.2 * sin(M_PI * time))));
+		//pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d((-0.2 * cos(M_PI * time)), (0.2 * sin(M_PI * time)), 0));
                 command_torques += pose_tasks[name]->computeTorques();
                 ++i;
             }
