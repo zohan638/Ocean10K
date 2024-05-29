@@ -340,7 +340,7 @@ int main() {
 					Sai2Primitives::HapticControlType::HOMING &&
 				haptic_controller->getHomed()) {
 				haptic_controller->setHapticControlType(
-					Sai2Primitives::HapticControlType::FORCE_MOTION);
+					Sai2Primitives::HapticControlType::MOTION_MOTION);
 				haptic_controller->setDeviceControlGains(350.0, 15.0);
 			}
 
