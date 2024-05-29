@@ -214,7 +214,6 @@ int main() {
 		haptic_input.robot_angular_velocity =
 			robot->angularVelocityInWorld(link_name);
 		haptic_input.robot_sensed_force = Vector3d::Zero();
-		haptic_input.robot_sensed_moment = Vector3d::Zero();
 
 		haptic_output = haptic_controller->computeHapticControl(haptic_input);
 
