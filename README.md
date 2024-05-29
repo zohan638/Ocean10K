@@ -15,6 +15,25 @@ cd build
 cmake .. && make -j4
 ```
 
+## Changing Sai2Graphics Instructions
+In Sai2Graphics.cpp, under 
+```
+void Sai2Graphics::renderGraphicsWorld()
+```
+You will need to comment out the lines 
+```
+setCameraPose(camera_name, camera_pos, camera_up_axis, camera_lookat_point);
+```
+and
+```
+render(camera_name);
+```
+Additionally, in Sai2Graphics.h, you will also need to move
+```
+void render(const std::string& camera_name);
+```
+from private to public.
+
 
 ## Interfacing with Haptic Controllers
 
