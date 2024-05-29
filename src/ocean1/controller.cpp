@@ -13,7 +13,9 @@
 #include <fstream>
 #include <thread>
 
+#include "Sai2Graphics.h"
 #include "Sai2Primitives.h"
+#include "Sai2Simulation.h"
 #include "redis_keys.h"
 #include "redis/RedisClient.h"
 #include "redis/keys/chai_haptic_devices_driver.h"
@@ -22,6 +24,7 @@
 using namespace std;
 using namespace Eigen;
 using namespace Sai2Primitives;
+using namespace Sai2Common::ChaiHapticDriverKeys;
 
 bool runloop = false;
 void sighandler(int){runloop = false;}
@@ -160,7 +163,7 @@ int main() {
         compliant_frame.translation() = control_points[i];
         pose_tasks[control_links[i]] = std::make_shared<Sai2Primitives::MotionForceTask>(robot, control_links[i], compliant_frame);
         pose_tasks[control_links[i]]->disableInternalOtg();
-        pose_tasks[control_links[i]]->setDynamicDecouplingType(Sai2Primitives::MotionForceTask::FULL_DYNAMIC_DECOUPLING);
+        pose_tasks[control_links[i]]->setDynamicDecouplingType(Sai2Primitives::FULL_DYNAMIC_DECOUPLING);
         pose_tasks[control_links[i]]->setPosControlGains(400, 40, 0);
         pose_tasks[control_links[i]]->setOriControlGains(400, 40, 0);
     }
