@@ -53,7 +53,7 @@ Eigen::VectorXd generateRandomVector(double lowerBound, double upperBound, int s
 int main() {
 	// Location of URDF files specifying world and robot information
 	static const string robot_file = string(CS225A_URDF_FOLDER) + "/ocean1/ocean1.urdf";
-    static const string link_name = "end-effector";
+    static const string link_name = "endEffector_left";
 
 	// initial state 
 	int state = POSTURE;
