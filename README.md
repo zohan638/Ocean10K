@@ -71,3 +71,6 @@ cd bin/ocean1
 ```
 ./controller_ocean1
 ```
+5. The haptic device should return to its HOMED state. Press the HOME button
+without disturbing its HOMED location. Once the button is pressed, you can
+start interacting with it normally.

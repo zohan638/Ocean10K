@@ -337,8 +337,7 @@ int main() {
 			// TODO (tashakim): set up state machine for button press
 			// state machine for button presses
 			if (haptic_controller->getHapticControlType() ==
-					Sai2Primitives::HapticControlType::HOMING &&
-				haptic_controller->getHomed()) {
+					Sai2Primitives::HapticControlType::HOMING) {
 				haptic_controller->setHapticControlType(
 					Sai2Primitives::HapticControlType::MOTION_MOTION);
 				haptic_controller->setDeviceControlGains(350.0, 15.0);
