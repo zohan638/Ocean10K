@@ -43,7 +43,10 @@ redis-server
 
 5. Plug in the haptic device to your device (e.g. laptop) and power it on.
 
-6. From `chaiHapticdeviceRedisDriver/build`, run:
+6. Calibrate the device. For example, for Falcon Novint, gently pull the
+controller out to its limit, press the HOME button, then release it.
+
+7. From `chaiHapticdeviceRedisDriver/build`, run:
 ```
 sudo ./chai_devices_redis_driver
 ```
