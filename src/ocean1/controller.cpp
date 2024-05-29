@@ -84,9 +84,10 @@ int main() {
 		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_STIFFNESS_KEY_SUFFIX, 0)),
 		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_DAMPING_KEY_SUFFIX, 0)),
 		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_FORCE_KEY_SUFFIX, 0)));
+	Affine3d device_home_pose = Affine3d(Translation3d(0, 0, 0));
     auto haptic_controller =
 		make_shared<Sai2Primitives::HapticDeviceController>(
-			device_limits, robot->transformInWorld(link_name));
+			device_limits, robot->transformInWorld(link_name), device_home_pose);
 	haptic_controller->setScalingFactors(3.5);
 	haptic_controller->setHapticControlType(
 		Sai2Primitives::HapticControlType::HOMING);
@@ -206,6 +207,8 @@ int main() {
 		robot->setDq(redis_client.getEigen(JOINT_VELOCITIES_KEY));
 		robot->updateModel();
 
+		// robot_controller->updateControllerTaskModels();
+
         // read haptic device state from Redis
 		redis_client.receiveAllFromGroup();
 
@@ -293,28 +296,53 @@ int main() {
 			N_prec = robot->nullspaceMatrix(J_pose_tasks);
 			// redundancy completion
 			posture_task->updateTaskModel(N_prec);
-			// -------- set task goals and compute control torques
+			//-------- set task goals and compute control torques
 			command_torques.setZero();
 
 			// base task
 			command_torques += base_task->computeTorques();
 
 			// pose tasks
-			int i = 0;
-			for (auto name : control_links) {
-				pose_tasks[name]->setGoalPosition(
-					haptic_output.robot_goal_position);
-				pose_tasks[name]->setGoalOrientation(
-					haptic_output.robot_goal_orientation);
-				pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d(0, (-0.2 * cos(M_PI * time)), (0.2 * sin(M_PI * time))));
+			pose_tasks["endEffector_right"]->setGoalPosition(starting_pose[0].translation());
+			command_torques += pose_tasks["endEffector_right"]->computeTorques();
+			// pose_tasks["endEffector_right"]->setGoalPosition(
+			// 	starting_pose[1].translation() + Vector3d(
+			// 		0, (-0.2 * cos(M_PI * time)), (0.2 * sin(M_PI * time))
+			// 	)
+			// );
+			cout << "???? robot goal position: \n";
+			cout << haptic_output.robot_goal_position;
+			cout << "\n\n";
+			pose_tasks["endEffector_left"]->setGoalPosition(haptic_output.robot_goal_position);
+			command_torques += pose_tasks["endEffector_left"]->computeTorques();
+
+			// int i = 0;
+			// for (auto name : control_links) {
+				// pose_tasks[name]->setGoalPosition(
+				// 	haptic_output.robot_goal_position);
+				// pose_tasks[name]->setGoalOrientation(
+				// 	haptic_output.robot_goal_orientation);
+				// cout << "<<<<<<<<\n";
+				// cout << "Haptic output robot position: \n" << haptic_output.robot_goal_position << "\n";
+				// cout << "<<<<<<<<\n";
+				// pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d(0, (-0.2 * cos(M_PI * time)), (0.2 * sin(M_PI * time))));
 				// pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d((-0.2 * cos(M_PI * time)), 0, (0.2 * sin(M_PI * time))));
 				// pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d((-0.2 * cos(M_PI * time)), (0.2 * sin(M_PI * time)), 0));
-				command_torques += pose_tasks[name]->computeTorques();
-				++i;
-			}
+				// command_torques += pose_tasks[name]->computeTorques();
+				// ++i;
+			// }
+
 			// TODO (tashakim): set up haptic feedback
 
 			// TODO (tashakim): set up state machine for button press
+			// state machine for button presses
+			if (haptic_controller->getHapticControlType() ==
+					Sai2Primitives::HapticControlType::HOMING &&
+				haptic_controller->getHomed()) {
+				haptic_controller->setHapticControlType(
+					Sai2Primitives::HapticControlType::FORCE_MOTION);
+				haptic_controller->setDeviceControlGains(350.0, 15.0);
+			}
 
 			// posture task and coriolis compensation
 			command_torques += posture_task->computeTorques() + robot->coriolisForce();
