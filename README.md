@@ -45,7 +45,7 @@ redis-server
 
 6. From `chaiHapticdeviceRedisDriver/build`, run:
 ```
-sudo ./chai_devices_redis_server
+sudo ./chai_devices_redis_driver
 ```
 
 
