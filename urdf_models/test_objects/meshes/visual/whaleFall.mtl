@@ -1,0 +1,42 @@
+# Blender 4.1.1 MTL File: 'whaleFall.blend'
+# www.blender.org
+
+newmtl model
+Ns 0.000000
+Ka 0.5 0.5 0.5
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd model_baseColor.jpg
+
+newmtl model1
+Ns 1000.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd model1_baseColor.jpg
+
+newmtl model2
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd model2_baseColor.jpg
+
+newmtl model3
+Ns 0.000000
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.500000
+d 1.000000
+illum 2
+map_Kd model3_baseColor.jpg
