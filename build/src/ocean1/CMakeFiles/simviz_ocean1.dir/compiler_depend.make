@@ -1082,6 +1082,7 @@ src/ocean1/CMakeFiles/simviz_ocean1.dir/simviz.cpp.o: /Users/tashakim/CS225A-Pro
   /Users/tashakim/OpenSai/core/sai2-primitives/src/helper_modules/Sai2PrimitivesCommonDefinitions.h \
   /Users/tashakim/OpenSai/core/sai2-primitives/src/tasks/JointTask.h \
   /Users/tashakim/OpenSai/core/sai2-primitives/src/tasks/MotionForceTask.h \
+  /Users/tashakim/OpenSai/core/sai2-primitives/src/tasks/SingularityHandler.h \
   /Users/tashakim/OpenSai/core/sai2-primitives/src/tasks/TemplateTask.h \
   /Users/tashakim/OpenSai/core/sai2-simulation/src/Sai2Simulation.h \
   /Users/tashakim/OpenSai/core/sai2-simulation/src/chai3d/CDynInternal.h \
@@ -1795,6 +1796,8 @@ src/ocean1/CMakeFiles/simviz_ocean1.dir/simviz.cpp.o: /Users/tashakim/CS225A-Pro
 /Users/tashakim/OpenSai/core/sai2-simulation/src/chai3d/CDynInternal.h:
 
 /Users/tashakim/OpenSai/core/sai2-simulation/src/Sai2Simulation.h:
+
+/Users/tashakim/OpenSai/core/sai2-primitives/src/tasks/SingularityHandler.h:
 
 /opt/homebrew/include/eigen3/Eigen/src/Core/Random.h:
 
