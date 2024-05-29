@@ -124,7 +124,6 @@ int main() {
     const std::vector<Vector3d> control_points = {Vector3d(0, 0, 0), Vector3d(0, 0, 0)};
     const std::vector<Vector3d> ee_average_control_point = {Vector3d(0, 0, 1)};
 
-    	//NEW CODE
     int k = 0;
 
     Vector3d goalBodyOrientation;
@@ -155,7 +154,6 @@ int main() {
 
     Vector3d goalBodyPosition;
     goalBodyPosition = endEffectorPosAverage - endEffectorToBodyDistance;	
-	//END NEW CODE
 
     for (int i = 0; i < control_links.size(); ++i) {        
         Affine3d compliant_frame = Affine3d::Identity();
@@ -240,98 +238,85 @@ int main() {
 			}
 		} else if (state == MOTION) {
             // update body task model
-			//NEW CODE
-		int j = 0;
+			int j = 0;
+			endEffectorPosSum = Vector3d(0, 0, 0);
+			for (auto name : control_links) {
+				endEffectorPosSum += robot->position(control_links[j], control_points[j]);
+				++j;
+			}
 
-		endEffectorPosSum = Vector3d(0, 0, 0);
-		for (auto name : control_links) {
-			endEffectorPosSum += robot->position(control_links[j], control_points[j]);
-			++j;
-		}	
+			endEffectorPosAverage = endEffectorPosSum/2;
 
-		endEffectorPosAverage = endEffectorPosSum/2;
+			int l = 0;
+			Vector3d worldEndEffectorPosSum;
+			Vector3d worldEndEffectorPosAverage;
+			worldEndEffectorPosSum = Vector3d(0, 0, 0);
+			for (auto name : control_links) {
+				worldEndEffectorPosSum += robot->positionInWorld(control_links[l], control_points[l]);
+				++l;
+			}
 
-		int l = 0;
-		Vector3d worldEndEffectorPosSum;
-		Vector3d worldEndEffectorPosAverage;
-		worldEndEffectorPosSum = Vector3d(0, 0, 0);
-		for (auto name : control_links) {
-			worldEndEffectorPosSum += robot->positionInWorld(control_links[l], control_points[l]);
-			++l;
-		}	
-
-		worldEndEffectorPosAverage = worldEndEffectorPosSum/2;
-			
+			worldEndEffectorPosAverage = worldEndEffectorPosSum/2;
 
 			// Get the position of the body's head
-                Vector3d headPosition = robot->position("Body", Vector3d(0, 0, 1)); 
+			Vector3d headPosition = robot->position("Body", Vector3d(0, 0, 1)); 
 
-            // Compute the direction vector from the body's head to the average end effector position
-                Vector3d direction = (endEffectorPosAverage - headPosition).normalized();
+			// Compute the direction vector from the body's head to the average end effector position
+			Vector3d direction = (endEffectorPosAverage - headPosition).normalized();
 
-            // Compute the current body orientation
-                Matrix3d currentOrientation = robot->rotation("Body");
+			// Compute the current body orientation
+			Matrix3d currentOrientation = robot->rotation("Body");
 
-            // Compute the desired orientation
-                Vector3d currentDirection = currentOrientation.col(2); // Assuming the body's forward direction is along the Z-axis
-                Matrix3d rotationMatrix = compute_rotation_matrix(currentDirection, direction);
+			// Compute the desired orientation
+			Vector3d currentDirection = currentOrientation.col(2); // Assuming the body's forward direction is along the Z-axis
+			// TODO (kamrob): Consider computing desired orientation for the head and body.
+			goalBodyPosition = endEffectorPosAverage - endEffectorToBodyDistance;	
+			cout << robot->position("Body", Vector3d(0.7, 0, 0.5));
+			N_prec.setIdentity();
+			base_task->updateTaskModel(N_prec); //base task is set to identity meaning its highest priority
+			N_prec = base_task->getTaskAndPreviousNullspace(); //Everything that uses N_prec is lower priority
+			base_task->setGoalPosition(Vector6d(goalBodyPosition[0], goalBodyPosition[1], goalBodyPosition[2], -goalBodyOrientation[1], goalBodyOrientation[0], goalBodyOrientation[2]));
 
-                 Matrix3d desiredOrientation = rotationMatrix * currentOrientation;
+			// update pose task models
+			for (auto it = pose_tasks.begin(); it != pose_tasks.end(); ++it) {
+				it->second->updateTaskModel(N_prec);
+				// N_prec = it->second->getTaskAndPreviousNullspace();
+			}
 
-		goalBodyPosition = endEffectorPosAverage - endEffectorToBodyDistance;	
-		cout << robot->position("Body", Vector3d(0.7, 0, 0.5));
-		
+			// get pose task Jacobian stack 
+			MatrixXd J_pose_tasks(6 * control_links.size(), robot->dof());
+			for (int i = 0; i < control_links.size(); ++i) {
+				J_pose_tasks.block(6 * i, 0, 6, robot->dof()) = robot->J(control_links[i], control_points[i]);
+			}        
+			N_prec = robot->nullspaceMatrix(J_pose_tasks);
+			// redundancy completion
+			posture_task->updateTaskModel(N_prec);
+			// -------- set task goals and compute control torques
+			command_torques.setZero();
 
-                N_prec.setIdentity();
-			
-                base_task->updateTaskModel(N_prec); //base task is set to identity meaning its highest priority
-                N_prec = base_task->getTaskAndPreviousNullspace(); //Everything that uses N_prec is lower priority
-		base_task->setGoalPosition(Vector6d(goalBodyPosition[0], goalBodyPosition[1], goalBodyPosition[2], -goalBodyOrientation[1], goalBodyOrientation[0], goalBodyOrientation[2]));
+			// base task
+			command_torques += base_task->computeTorques();
 
-            // update pose task models
-            for (auto it = pose_tasks.begin(); it != pose_tasks.end(); ++it) {
-                it->second->updateTaskModel(N_prec);
-                // N_prec = it->second->getTaskAndPreviousNullspace();
-            }
+			// pose tasks
+			int i = 0;
+			for (auto name : control_links) {
+				pose_tasks[name]->setGoalPosition(
+					haptic_output.robot_goal_position);
+				pose_tasks[name]->setGoalOrientation(
+					haptic_output.robot_goal_orientation);
+				pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d(0, (-0.2 * cos(M_PI * time)), (0.2 * sin(M_PI * time))));
+				// pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d((-0.2 * cos(M_PI * time)), 0, (0.2 * sin(M_PI * time))));
+				// pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d((-0.2 * cos(M_PI * time)), (0.2 * sin(M_PI * time)), 0));
+				command_torques += pose_tasks[name]->computeTorques();
+				++i;
+			}
+			// TODO (tashakim): set up haptic feedback
 
-            // get pose task Jacobian stack 
-            MatrixXd J_pose_tasks(6 * control_links.size(), robot->dof());
-            for (int i = 0; i < control_links.size(); ++i) {
-                J_pose_tasks.block(6 * i, 0, 6, robot->dof()) = robot->J(control_links[i], control_points[i]);
-            }        
-            N_prec = robot->nullspaceMatrix(J_pose_tasks);
-                
-            // redundancy completion
-            posture_task->updateTaskModel(N_prec);
+			// TODO (tashakim): set up state machine for button press
 
-            // -------- set task goals and compute control torques
-            command_torques.setZero();
-
-            // base task
-            command_torques += base_task->computeTorques();
-
-            // pose tasks
-            int i = 0;
-            for (auto name : control_links) {
-                pose_tasks[name]->setGoalPosition(
-                    haptic_output.robot_goal_position);
-                pose_tasks[name]->setGoalOrientation(
-                    haptic_output.robot_goal_orientation);
-                pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d(0, (-0.2 * cos(M_PI * time)), (0.2 * sin(M_PI * time))));
-		//pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d((-0.2 * cos(M_PI * time)), 0, (0.2 * sin(M_PI * time))));
-		//pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d((-0.2 * cos(M_PI * time)), (0.2 * sin(M_PI * time)), 0));
-                command_torques += pose_tasks[name]->computeTorques();
-                ++i;
-            }
-
-            // TODO (tashakim): set up haptic feedback
-
-            // TODO (tashakim): set up state machine for button press
-
-            // posture task and coriolis compensation
-            command_torques += posture_task->computeTorques() + robot->coriolisForce();
+			// posture task and coriolis compensation
+			command_torques += posture_task->computeTorques() + robot->coriolisForce();
         }
-
 		// execute redis write callback
 		redis_client.setEigen(JOINT_TORQUES_COMMANDED_KEY, command_torques);
 	}
