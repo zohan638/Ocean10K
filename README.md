@@ -43,7 +43,7 @@ redis-server
 
 5. Plug in the haptic device to your device (e.g. laptop) and power it on.
 
-6. From the build directory, run:
+6. From `chaiHapticdeviceRedisDriver/build`, run:
 ```
 sudo ./chai_devices_redis_server
 ```
