@@ -2,21 +2,126 @@ name: C/C++ CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
-    - name: Running cmake
+
+    - name: Install dependencies
       run: |
-        cd ${{ github.workspace }}
-        mkdir build
-        cd build
-        cmake .. && make -j4
+        os_name=$(uname -s)
+        if [ "$os_name" = "Linux" ]; then
+          echo "Installing dependencies for linux."
+          sudo apt-get update
+          sudo apt-get install build-essential cmake git libeigen3-dev libtinyxml2-dev libgtest-dev \
+            libasound2-dev libusb-1.0.0-dev freeglut3-dev xorg-dev libglew-dev libglfw3-dev \
+            libopenal-dev redis libhiredis-dev libjsoncpp-dev tmux
+        elif [ "$os_name" = "Darwin" ]; then
+          echo "Installing dependencies for macOS."
+          brew update
+          brew install cmake git eigen tinyxml2 googletest glfw3 glew redis hiredis jsoncpp tmux openal-soft
+        else
+          echo "ERROR: Unsupported OS. Only Linux and macOS are supported."
+          exit 1
+        fi
+        echo "Dependencies installed."
+
+    - name: Build core libraries
+      run: |
+        mkdir -p core
+        cd core
         
+        # Clone all repositories if needed
+        if [ ! -d "sai2-common" ]; then
+          git clone https://github.com/manips-sai-org/sai2-common.git
+        fi
+        if [ ! -d "sai2-urdfreader" ]; then
+          git clone https://github.com/manips-sai-org/sai2-urdfreader.git
+        fi
+        if [ ! -d "sai2-model" ]; then
+          git clone https://github.com/manips-sai-org/sai2-model.git
+        fi
+        if [ ! -d "chai3d" ]; then
+          git clone https://github.com/manips-sai-org/chai3d.git
+        fi
+        if [ ! -d "sai2-graphics" ]; then
+          git clone https://github.com/manips-sai-org/sai2-graphics.git
+        fi
+        if [ ! -d "sai2-simulation" ]; then
+          git clone https://github.com/manips-sai-org/sai2-simulation.git
+        fi
+        if [ ! -d "sai2-primitives" ]; then
+          git clone https://github.com/manips-sai-org/sai2-primitives.git
+        fi
+        if [ ! -d "sai2-interfaces" ]; then
+          git clone https://github.com/manips-sai-org/sai2-interfaces.git
+        fi
+        
+        # Build all the repositories
+        cd sai2-common
+        git checkout master && git pull
+        mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j8 && cd ../..
+        
+        cd sai2-urdfreader
+        git checkout master && git pull
+        mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j8 && cd ../..
+        
+        cd sai2-model
+        git checkout master && git pull
+        cd rbdl
+        mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j8 && cd ../..
+        mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j8 && cd ../..
+        
+        cd chai3d
+        git checkout master && git pull
+        mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j8 && cd ../..
+        
+        cd sai2-graphics
+        git checkout master && git pull
+        mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j8 && cd ../..
+        
+        cd sai2-simulation
+        git checkout master && git pull
+        mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j8 && cd ../..
+        
+        cd sai2-primitives
+        git checkout master && git pull
+        cd ruckig
+        mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j8 && cd ../..
+        mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j8 && cd ../..
+        
+        cd sai2-interfaces
+        git checkout master && git pull
+        mkdir -p build && cd build && cmake -DCMAKE_BUILD_TYPE=Release .. && make -j8 && cd ../..
+        
+        cd ..
+
+    - name: Clone and build OpenSai
+      run: |
+        git clone https://github.com/manips-sai-org/OpenSai.git
+        cd OpenSai
+        mkdir build && cd build
+        cmake .. -DCMAKE_PREFIX_PATH=${{github.workspace}}/core/chai3d/build:${{github.workspace}}/core/sai2-common/build
+        make -j8
+
+    - name: Clone and build chaiHapticdeviceRedisDriver
+      run: |
+        git clone https://github.com/manips-sai-org/chaiHapticdeviceRedisDriver.git
+        cd chaiHapticdeviceRedisDriver
+        mkdir build && cd build
+        cmake .. -DCMAKE_PREFIX_PATH=${{github.workspace}}/core/chai3d/build:${{github.workspace}}/core/sai2-common/build
+        make -j8
+
+    - name: Configure CMake
+      run: |
+        mkdir build && cd build
+        cmake .. -DCMAKE_PREFIX_PATH="${{github.workspace}}/core/chai3d/build;${{github.workspace}}/core/sai2-common/build;${{github.workspace}}/core/sai2-urdfreader/build;${{github.workspace}}/core/sai2-model/build;${{github.workspace}}/core/sai2-graphics/build;${{github.workspace}}/core/sai2-simulation/build;${{github.workspace}}/core/sai2-primitives/build;${{github.workspace}}/core/sai2-interfaces/build;${{github.workspace}}/OpenSai/build;${{github.workspace}}/chaiHapticdeviceRedisDriver/build"
+
+    - name: Build
+      run: cmake --build build
