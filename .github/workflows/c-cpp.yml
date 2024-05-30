@@ -22,22 +22,34 @@ jobs:
           sudo apt-get install build-essential cmake git libeigen3-dev libtinyxml2-dev libgtest-dev \
             libasound2-dev libusb-1.0.0-dev freeglut3-dev xorg-dev libglew-dev libglfw3-dev \
             libopenal-dev redis libhiredis-dev libjsoncpp-dev tmux
+          # Install CHAI3D
+          git clone https://github.com/chai3d/chai3d.git
+          cd chai3d
+          mkdir build && cd build
+          cmake .. -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/chai3d-install
+          make install
         elif [ "$os_name" = "Darwin" ]; then
           echo "Installing dependencies for macOS."
           brew update
           brew install cmake git eigen tinyxml2 googletest glfw3 glew redis hiredis jsoncpp tmux openal-soft
+          # Install CHAI3D
+          git clone https://github.com/chai3d/chai3d.git
+          cd chai3d
+          mkdir build && cd build
+          cmake .. -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/chai3d-install
+          make install
         else
           echo "ERROR: Unsupported OS. Only Linux and macOS are supported."
           exit 1
         fi
         echo "Dependencies installed."
-        
+
     - name: Clone and build OpenSai
       run: |
         git clone https://github.com/manips-sai-org/OpenSai.git
         cd OpenSai
         mkdir build && cd build
-        cmake .. -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/opensai-install
+        cmake .. -DCMAKE_PREFIX_PATH=${{github.workspace}}/chai3d-install -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/opensai-install
         make install
         
     - name: Clone and build chaiHapticdeviceRedisDriver
@@ -51,7 +63,7 @@ jobs:
     - name: Configure CMake
       run: |
         mkdir build && cd build
-        cmake .. -DCMAKE_PREFIX_PATH="${{github.workspace}}/opensai-install;${{github.workspace}}/chai-install"
-        
+        cmake .. -DCMAKE_PREFIX_PATH="${{github.workspace}}/chai3d-install;${{github.workspace}}/opensai-install;${{github.workspace}}/chai-install"
+   
     - name: Build
       run: cmake --build build
