@@ -12,6 +12,7 @@
 #include <string>
 #include <fstream>
 #include <thread>
+#include <vector>
 
 #include "Sai2Graphics.h"
 #include "Sai2Primitives.h"
@@ -53,7 +54,7 @@ Eigen::VectorXd generateRandomVector(double lowerBound, double upperBound, int s
 int main() {
 	// Location of URDF files specifying world and robot information
 	static const string robot_file = string(CS225A_URDF_FOLDER) + "/ocean1/ocean1.urdf";
-    static const string link_name = "endEffector_left";
+	vector<string> link_names = {"endEffector_left", "endEffector_right"};
 
 	// initial state 
 	int state = POSTURE;
@@ -79,46 +80,77 @@ int main() {
 	VectorXd command_torques = VectorXd::Zero(dof); 
 	MatrixXd N_prec = MatrixXd::Identity(dof, dof);
 
-    // create haptic controller
-    Sai2Primitives::HapticDeviceController::DeviceLimits device_limits(
+    // create haptic controllers
+	Affine3d device_home_pose = Affine3d(Translation3d(0, 0, 0));
+	Vector3i directions_of_proxy_feedback = Vector3i::Zero();
+	bool haptic_button_was_pressed = false;
+	int haptic_button_is_pressed = 0;
+
+	Sai2Primitives::HapticDeviceController::DeviceLimits device_limits_left(
 		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_STIFFNESS_KEY_SUFFIX, 0)),
 		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_DAMPING_KEY_SUFFIX, 0)),
 		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_FORCE_KEY_SUFFIX, 0)));
-	Affine3d device_home_pose = Affine3d(Translation3d(0, 0, 0));
-    auto haptic_controller =
+    auto haptic_controller_left =
 		make_shared<Sai2Primitives::HapticDeviceController>(
-			device_limits, robot->transformInWorld(link_name), device_home_pose);
-	haptic_controller->setScalingFactors(3.5);
-	haptic_controller->setHapticControlType(
-		Sai2Primitives::HapticControlType::HOMING);
-	haptic_controller->disableOrientationTeleop();
-	Vector3i directions_of_proxy_feedback = Vector3i::Zero();
-
-    Sai2Primitives::HapticControllerInput haptic_input;
-	Sai2Primitives::HapticControllerOtuput haptic_output;
-	bool haptic_button_was_pressed = false;
-	int haptic_button_is_pressed = 0;
-	redis_client.setInt(Sai2Common::ChaiHapticDriverKeys::createRedisKey(SWITCH_PRESSED_KEY_SUFFIX, 0),
+			device_limits_left, robot->transformInWorld(link_names[0]), device_home_pose);
+	haptic_controller_left->setScalingFactors(3.5);
+	haptic_controller_left->setHapticControlType(Sai2Primitives::HapticControlType::HOMING);
+	haptic_controller_left->disableOrientationTeleop();
+	Sai2Primitives::HapticControllerInput haptic_input_left;
+	Sai2Primitives::HapticControllerOtuput haptic_output_left;
+	
+	Sai2Primitives::HapticDeviceController::DeviceLimits device_limits_right(
+		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_STIFFNESS_KEY_SUFFIX, 1)),
+		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_DAMPING_KEY_SUFFIX, 1)),
+		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_FORCE_KEY_SUFFIX, 1)));	
+    auto haptic_controller_right =
+		make_shared<Sai2Primitives::HapticDeviceController>(
+			device_limits_right, robot->transformInWorld(link_names[1]), device_home_pose);
+	haptic_controller_right->setScalingFactors(3.5);
+	haptic_controller_right->setHapticControlType(Sai2Primitives::HapticControlType::HOMING);
+	haptic_controller_right->disableOrientationTeleop();
+	Sai2Primitives::HapticControllerInput haptic_input_right;
+	Sai2Primitives::HapticControllerOtuput haptic_output_right;
+    
+	for (int i=0; i<2; i++) {
+		redis_client.setInt(Sai2Common::ChaiHapticDriverKeys::createRedisKey(SWITCH_PRESSED_KEY_SUFFIX, i),
 						haptic_button_is_pressed);
-	redis_client.setInt(Sai2Common::ChaiHapticDriverKeys::createRedisKey(USE_GRIPPER_AS_SWITCH_KEY_SUFFIX, 0), 1);
-
+		redis_client.setInt(Sai2Common::ChaiHapticDriverKeys::createRedisKey(USE_GRIPPER_AS_SWITCH_KEY_SUFFIX, i), 1);
+	}
+	
     // setup redis communication
 	redis_client.addToSendGroup(Sai2Common::ChaiHapticDriverKeys::createRedisKey(COMMANDED_FORCE_KEY_SUFFIX, 0),
-								haptic_output.device_command_force);
+								haptic_output_left.device_command_force);
 	redis_client.addToSendGroup(Sai2Common::ChaiHapticDriverKeys::createRedisKey(COMMANDED_TORQUE_KEY_SUFFIX, 0),
-								haptic_output.device_command_moment);
-
+								haptic_output_left.device_command_moment);
 	redis_client.addToReceiveGroup(Sai2Common::ChaiHapticDriverKeys::createRedisKey(POSITION_KEY_SUFFIX, 0),
-								   haptic_input.device_position);
+								   haptic_input_left.device_position);
 	redis_client.addToReceiveGroup(Sai2Common::ChaiHapticDriverKeys::createRedisKey(ROTATION_KEY_SUFFIX, 0),
-								   haptic_input.device_orientation);
+								   haptic_input_left.device_orientation);
 	redis_client.addToReceiveGroup(
 		Sai2Common::ChaiHapticDriverKeys::createRedisKey(LINEAR_VELOCITY_KEY_SUFFIX, 0),
-		haptic_input.device_linear_velocity);
+		haptic_input_left.device_linear_velocity);
 	redis_client.addToReceiveGroup(
 		Sai2Common::ChaiHapticDriverKeys::createRedisKey(ANGULAR_VELOCITY_KEY_SUFFIX, 0),
-		haptic_input.device_angular_velocity);
+		haptic_input_left.device_angular_velocity);
 	redis_client.addToReceiveGroup(Sai2Common::ChaiHapticDriverKeys::createRedisKey(SWITCH_PRESSED_KEY_SUFFIX, 0),
+								   haptic_button_is_pressed);
+
+	redis_client.addToSendGroup(Sai2Common::ChaiHapticDriverKeys::createRedisKey(COMMANDED_FORCE_KEY_SUFFIX, 1),
+								haptic_output_right.device_command_force);
+	redis_client.addToSendGroup(Sai2Common::ChaiHapticDriverKeys::createRedisKey(COMMANDED_TORQUE_KEY_SUFFIX, 1),
+								haptic_output_right.device_command_moment);
+	redis_client.addToReceiveGroup(Sai2Common::ChaiHapticDriverKeys::createRedisKey(POSITION_KEY_SUFFIX, 1),
+								   haptic_input_right.device_position);
+	redis_client.addToReceiveGroup(Sai2Common::ChaiHapticDriverKeys::createRedisKey(ROTATION_KEY_SUFFIX, 1),
+								   haptic_input_right.device_orientation);
+	redis_client.addToReceiveGroup(
+		Sai2Common::ChaiHapticDriverKeys::createRedisKey(LINEAR_VELOCITY_KEY_SUFFIX, 1),
+		haptic_input_right.device_linear_velocity);
+	redis_client.addToReceiveGroup(
+		Sai2Common::ChaiHapticDriverKeys::createRedisKey(ANGULAR_VELOCITY_KEY_SUFFIX, 1),
+		haptic_input_right.device_angular_velocity);
+	redis_client.addToReceiveGroup(Sai2Common::ChaiHapticDriverKeys::createRedisKey(SWITCH_PRESSED_KEY_SUFFIX, 1),
 								   haptic_button_is_pressed);
 
 	// create map for arm pose tasks
@@ -213,15 +245,23 @@ int main() {
 		redis_client.receiveAllFromGroup();
 
         // compute haptic control
-		haptic_input.robot_position = robot->positionInWorld(link_name);
-		haptic_input.robot_orientation = robot->rotationInWorld(link_name);
-		haptic_input.robot_linear_velocity =
-			robot->linearVelocityInWorld(link_name);
-		haptic_input.robot_angular_velocity =
-			robot->angularVelocityInWorld(link_name);
-		haptic_input.robot_sensed_force = Vector3d::Zero();
+		haptic_input_left.robot_position = robot->positionInWorld(link_names[0]);
+		haptic_input_left.robot_orientation = robot->rotationInWorld(link_names[0]);
+		haptic_input_left.robot_linear_velocity =
+			robot->linearVelocityInWorld(link_names[0]);
+		haptic_input_left.robot_angular_velocity =
+			robot->angularVelocityInWorld(link_names[0]);
+		haptic_input_left.robot_sensed_force = Vector3d::Zero();
+		haptic_output_left = haptic_controller_left->computeHapticControl(haptic_input_left);
 
-		haptic_output = haptic_controller->computeHapticControl(haptic_input);
+		haptic_input_right.robot_position = robot->positionInWorld(link_names[1]);
+		haptic_input_right.robot_orientation = robot->rotationInWorld(link_names[1]);
+		haptic_input_right.robot_linear_velocity =
+			robot->linearVelocityInWorld(link_names[1]);
+		haptic_input_right.robot_angular_velocity =
+			robot->angularVelocityInWorld(link_names[1]);
+		haptic_input_right.robot_sensed_force = Vector3d::Zero();
+		haptic_output_right = haptic_controller_right->computeHapticControl(haptic_input_right);
 
 		redis_client.sendAllFromGroup();
 	
@@ -303,18 +343,20 @@ int main() {
 			command_torques += base_task->computeTorques();
 
 			// pose tasks
-			pose_tasks["endEffector_right"]->setGoalPosition(starting_pose[0].translation());
-			command_torques += pose_tasks["endEffector_right"]->computeTorques();
+			// pose_tasks["endEffector_right"]->setGoalPosition(starting_pose[0].translation());
+			// command_torques += pose_tasks["endEffector_right"]->computeTorques();
 			// pose_tasks["endEffector_right"]->setGoalPosition(
 			// 	starting_pose[1].translation() + Vector3d(
 			// 		0, (-0.2 * cos(M_PI * time)), (0.2 * sin(M_PI * time))
 			// 	)
 			// );
-			cout << "???? robot goal position: \n";
-			cout << haptic_output.robot_goal_position;
-			cout << "\n\n";
-			pose_tasks["endEffector_left"]->setGoalPosition(haptic_output.robot_goal_position);
+			// cout << "???? robot goal position: \n";
+			// cout << haptic_output_left.robot_goal_position;
+			// cout << "\n\n";
+			pose_tasks["endEffector_left"]->setGoalPosition(haptic_output_left.robot_goal_position);
 			command_torques += pose_tasks["endEffector_left"]->computeTorques();
+			pose_tasks["endEffector_right"]->setGoalPosition(haptic_output_right.robot_goal_position);
+			command_torques += pose_tasks["endEffector_right"]->computeTorques();
 
 			// int i = 0;
 			// for (auto name : control_links) {
@@ -336,11 +378,13 @@ int main() {
 
 			// TODO (tashakim): set up state machine for button press
 			// state machine for button presses
-			if (haptic_controller->getHapticControlType() ==
-					Sai2Primitives::HapticControlType::HOMING) {
-				haptic_controller->setHapticControlType(
-					Sai2Primitives::HapticControlType::MOTION_MOTION);
-				haptic_controller->setDeviceControlGains(350.0, 15.0);
+			if (haptic_controller_left->getHapticControlType() == Sai2Primitives::HapticControlType::HOMING) {
+				haptic_controller_left->setHapticControlType(Sai2Primitives::HapticControlType::MOTION_MOTION);
+				haptic_controller_left->setDeviceControlGains(350.0, 15.0);
+			}
+			if (haptic_controller_right->getHapticControlType() == Sai2Primitives::HapticControlType::HOMING) {
+				haptic_controller_right->setHapticControlType(Sai2Primitives::HapticControlType::MOTION_MOTION);
+				haptic_controller_right->setDeviceControlGains(350.0, 15.0);
 			}
 
 			// posture task and coriolis compensation
