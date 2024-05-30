@@ -27,7 +27,7 @@ jobs:
           cd chai3d
           mkdir build && cd build
           cmake .. -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/chai3d-install
-          make install
+          make
         elif [ "$os_name" = "Darwin" ]; then
           echo "Installing dependencies for macOS."
           brew update
@@ -49,7 +49,7 @@ jobs:
         git clone https://github.com/manips-sai-org/OpenSai.git
         cd OpenSai
         mkdir build && cd build
-        cmake .. -DCMAKE_PREFIX_PATH=${{github.workspace}}/chai3d-install -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/opensai-install
+        cmake .. -DCMAKE_PREFIX_PATH=${{github.workspace}}/chai3d/build -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/opensai-install
         make install
         
     - name: Clone and build chaiHapticdeviceRedisDriver
@@ -59,11 +59,11 @@ jobs:
         mkdir build && cd build
         cmake .. -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/chai-install
         make install
-        
+    
     - name: Configure CMake
       run: |
         mkdir build && cd build
-        cmake .. -DCMAKE_PREFIX_PATH="${{github.workspace}}/chai3d-install;${{github.workspace}}/opensai-install;${{github.workspace}}/chai-install"
-   
+        cmake .. -DCMAKE_PREFIX_PATH="${{github.workspace}}/chai3d/build;${{github.workspace}}/opensai-install;${{github.workspace}}/chai-install"
+        
     - name: Build
       run: cmake --build build
