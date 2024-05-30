@@ -131,8 +131,8 @@ int main() {
 		
 		
 		graphics->renderGraphicsWorld();
-		graphics->setCameraPose(camera_name, newCamPos, newCamVert, newCamLookat); //Updates the camera pose
-		graphics->render(camera_name); //Renders the new camera
+		// graphics->setCameraPose(camera_name, newCamPos, newCamVert, newCamLookat); //Updates the camera pose
+		// graphics->render(camera_name); //Renders the new camera
 
 		{
 			lock_guard<mutex> lock(mutex_torques);
