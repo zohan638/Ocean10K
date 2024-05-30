@@ -474,7 +474,7 @@ int main() {
 		// execute redis write callback
 		redis_client.setEigen(JOINT_TORQUES_COMMANDED_KEY, command_torques);
 	}
-
+	}
 	timer.stop();
 	cout << "\nSimulation loop timer stats:\n";
 	timer.printInfoPostRun();
@@ -484,6 +484,6 @@ int main() {
     redis_client.setEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(COMMANDED_TORQUE_KEY_SUFFIX, 0),
 						  Vector3d::Zero());
 	redis_client.setInt(Sai2Common::ChaiHapticDriverKeys::createRedisKey(USE_GRIPPER_AS_SWITCH_KEY_SUFFIX, 0), 0);
-
+	
 	return 0;
 }
