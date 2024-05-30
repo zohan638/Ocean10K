@@ -107,21 +107,21 @@ jobs:
         git clone https://github.com/manips-sai-org/OpenSai.git
         cd OpenSai
         mkdir build && cd build
-        cmake .. -DCMAKE_PREFIX_PATH=${{github.workspace}}/core/chai3d/build:${{github.workspace}}/core/sai2-common/build -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/opensai-install
-        make install
+        cmake .. -DCMAKE_PREFIX_PATH=${{github.workspace}}/core/chai3d/build:${{github.workspace}}/core/sai2-common/build
+        make -j8
 
     - name: Clone and build chaiHapticdeviceRedisDriver
       run: |
         git clone https://github.com/manips-sai-org/chaiHapticdeviceRedisDriver.git
         cd chaiHapticdeviceRedisDriver
         mkdir build && cd build
-        cmake .. -DCMAKE_PREFIX_PATH=${{github.workspace}}/core/chai3d/build:${{github.workspace}}/core/sai2-common/build -DCMAKE_INSTALL_PREFIX=${{github.workspace}}/chai-install
-        make install
+        cmake .. -DCMAKE_PREFIX_PATH=${{github.workspace}}/core/chai3d/build:${{github.workspace}}/core/sai2-common/build
+        make -j8
 
     - name: Configure CMake
       run: |
         mkdir build && cd build
-        cmake .. -DCMAKE_PREFIX_PATH="${{github.workspace}}/core/chai3d/build;${{github.workspace}}/core/sai2-common/build;${{github.workspace}}/opensai-install;${{github.workspace}}/chai-install"
+        cmake .. -DCMAKE_PREFIX_PATH="${{github.workspace}}/core/chai3d/build;${{github.workspace}}/core/sai2-common/build;${{github.workspace}}/core/sai2-urdfreader/build;${{github.workspace}}/core/sai2-model/build;${{github.workspace}}/core/sai2-graphics/build;${{github.workspace}}/core/sai2-simulation/build;${{github.workspace}}/core/sai2-primitives/build;${{github.workspace}}/core/sai2-interfaces/build;${{github.workspace}}/OpenSai/build;${{github.workspace}}/chaiHapticdeviceRedisDriver/build"
 
     - name: Build
       run: cmake --build build
