@@ -9,8 +9,9 @@ This project depends on sai2 libraries. The install instructions can be found
 
 
 ## Build Instructions
-Navigate to the `build` directory, then make by:
+Create a `build` directory, then make by running:
 ```
+mkdir build
 cd build
 cmake .. && make -j4
 ```

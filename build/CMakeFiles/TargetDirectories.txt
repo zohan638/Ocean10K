@@ -1,8 +1,0 @@
-/Users/tashakim/CS225A-Project/build/CMakeFiles/edit_cache.dir
-/Users/tashakim/CS225A-Project/build/CMakeFiles/rebuild_cache.dir
-/Users/tashakim/CS225A-Project/build/src/CMakeFiles/edit_cache.dir
-/Users/tashakim/CS225A-Project/build/src/CMakeFiles/rebuild_cache.dir
-/Users/tashakim/CS225A-Project/build/src/ocean1/CMakeFiles/controller_ocean1.dir
-/Users/tashakim/CS225A-Project/build/src/ocean1/CMakeFiles/simviz_ocean1.dir
-/Users/tashakim/CS225A-Project/build/src/ocean1/CMakeFiles/edit_cache.dir
-/Users/tashakim/CS225A-Project/build/src/ocean1/CMakeFiles/rebuild_cache.dir
