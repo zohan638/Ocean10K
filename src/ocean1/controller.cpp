@@ -252,13 +252,17 @@ int main() {
     cout << base_selection_matrix << endl;
 	auto base_task = std::make_shared<Sai2Primitives::JointTask>(robot, base_selection_matrix);
 	base_task->setGains(400, 40, 0);
-
-    // posture task
-    auto posture_task = std::make_shared<Sai2Primitives::JointTask>(robot);
-	posture_task->disableInternalOtg();
+	
 	VectorXd q_desired = robot->q();
-	posture_task->setGains(400, 40, 0);
-	posture_task->setGoalPosition(q_desired);
+
+
+	// dual arm partial joint task 
+    int num_arm_joints = 14;
+	MatrixXd arms_selection_matrix = MatrixXd::Zero(num_arm_joints, robot->dof());
+	arms_selection_matrix.block(0, 6, num_arm_joints, num_arm_joints).setIdentity();
+    cout << arms_selection_matrix << endl;
+	auto arms_posture_task = std::make_shared<Sai2Primitives::JointTask>(robot, arms_selection_matrix);
+	arms_posture_task->setGains(400, 40, 0); 
 
 	// get starting poses
     std::vector<Affine3d> starting_pose;
