@@ -1,111 +1,318 @@
 <?xml version="1.0" ?>
+<world name="demo_world">
+    <gravity> 0.0 0.0 -10
+    </gravity>
 
-<world name="demo_world" gravity="0.0 0.0 0.0">
+    <robot name="ocean1">
+        <model dir="${CS225A_URDF_FOLDER}/ocean1" path="ocean1.urdf" name="ocean1" />
+        <origin xyz="0 0 1" rpy="0 0 0" />
+    </robot>
 
-	<robot name="ocean1">
-		<model dir="${CS225A_URDF_FOLDER}/ocean1" path="ocean1.urdf" name="ocean1" />
-		<!-- <origin xyz="0 0 -0.94" rpy="0 0 0" /> -->
-	</robot>
+    <static_object name="Ground_With_Texture">
+        <origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
+        <visual>
+            <origin xyz="0.0 0.0 -0.0001" rpy="0 0 0" />
+            <geometry>
+                <box size="12 12 0.0004" />
+            </geometry>
+            <material name="material">
+                <color rgba="0.2 0.39 0.47 0.8" />
+            </material>
+        </visual>
+        <collision>
+            <origin xyz="0.0 0.0 -0.0001" rpy="0 0 0" />
+            <geometry>
+                <box size="12 12 0.0004" />
+            </geometry>
+        </collision>
+    </static_object>
 
-	<static_object name="Ground_With_Texture">
-		<origin xyz="0.0 0.0 0.0" rpy="0 0 0" />
-	    <visual>
-	        <origin xyz="0.0 0.0 -0.0001" rpy="0 0 0" />
-	        <geometry>
-	            <box size="2 2 0.0002" />
-	        </geometry>
-	        <material name="material">
-		        <color rgba="0.5 0.5 0.5 1.0" />
-	        </material>
-	    </visual>
-		<collision>
-	        <origin xyz="0.0 0.0 -0.0001" rpy="0 0 0" />
-	        <geometry>
-	            <box size="2 2 0.0002" />
-	        </geometry>
-	    </collision>
-	</static_object>
+    <dynamic_object name="plastic_bag">
+        <origin xyz="-6.0 4 0.5" rpy="1.571 0 0" />
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <mass value="5" />
+            <inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0" />
+        </inertial>
 
-	<dynamic_object name="cup">
-		<origin xyz="0.0 0.5 1.0" rpy="0 0 0" />
-		<inertial>
-        	<origin xyz="0 0 0" rpy="0 0 0" />
-        	<mass value="10" />
-        	<inertia ixx="1" iyy="1" izz="1" ixy="0" ixz="0" iyz="0" />
-      	</inertial>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="${CS225A_URDF_FOLDER}/test_objects/meshes/visual/plastic_bag.obj" />
+            </geometry>
+            <material name="material">
+                <color rgba="0 0 0 1" />
+            </material>
+        </visual>
 
-	    <visual>
-	        <origin xyz="0 0 0" rpy="0 0 0" />
-			<geometry>
-	            <mesh filename="${CS225A_URDF_FOLDER}/test_objects/meshes/visual/cup.obj" />
-	        </geometry>
-	    </visual>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.25 0.25 0.25" />
+            </geometry>
+            <material name="material">
+                <color rgba="0 1 0.95 0.8" />
+            </material>
+        </visual>
 
-		<visual>
-	        <origin xyz="0 0 0.06" rpy="0 0 0" />
-	        <geometry>
-	            <box size="0.1 0.1 0.15" />
-	        </geometry>
-	        <material name="material">
-		        <color rgba="1 1 1 1.0" />
-	        </material>
-	    </visual>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.25 0.25 0.25" />
+            </geometry>
+        </collision>
 
-	    <collision>
-	        <origin xyz="0 0 0.06" rpy="0 0 0" />
-	        <geometry>
-	            <box size="0.1 0.1 0.15" />
-	        </geometry>
-	    </collision>
-	</dynamic_object>
+    </dynamic_object>
 
-	<dynamic_object name="bottle">
-		<origin xyz="1.0 0.0 -0.5" rpy="0 0 0" />
-		<inertial>
-        	<origin xyz="0 0 0" rpy="0 0 0" />
-        	<mass value="10" />
-        	<inertia ixx="1" iyy="1" izz="1" ixy="0" ixz="0" iyz="0" />
-      	</inertial>
+    <dynamic_object name="rope">
+        <origin xyz="4.5 4.5 0.02" rpy="1.571 0 0" />
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <mass value="5" />
+            <inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0" />
+        </inertial>
 
-	    <!-- <visual>
-	        <origin xyz="0 0 0" rpy="0 0 0" />
-			<geometry>
-	            <mesh filename="${CS225A_URDF_FOLDER}/test_objects/meshes/visual/bottle.obj" />
-	        </geometry>
-	    </visual> -->
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <mesh filename="${CS225A_URDF_FOLDER}/test_objects/meshes/visual/rope.obj" />
+            </geometry>
+            <material name="material">
+                <color rgba="0 0 0 1" />
+            </material>
+        </visual>
 
-		<visual>
-	        <origin xyz="0 0 0.06" rpy="0 0 0" />
-	        <geometry>
-	            <box size="0.1 0.1 0.15" />
-	        </geometry>
-	        <material name="material">
-		        <color rgba="1 1 1 1.0" />
-	        </material>
-	    </visual>
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.25 0.25 0.25" />
+            </geometry>
+            <material name="material">
+                <color rgba="0 1 0.95 0.8" />
+            </material>
+        </visual>
 
-	    <collision>
-	        <origin xyz="0 0 0.06" rpy="0 0 0" />
-	        <geometry>
-	            <box size="0.1 0.1 0.15" />
-	        </geometry>
-	    </collision>
-	</dynamic_object>
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.25 0.25 0.25" />
+            </geometry>
+        </collision>
 
-	<light name="light1" type="directional">
-		<position xyz="2.0 2.0 2.0" />
-		<lookat xyz="0.0 0.0 0.0" />
-	</light>
+    </dynamic_object>
 
-	<light name="light2" type="directional">
-		<position xyz="-2.0 -2.0 2.0" />
-		<lookat xyz="0.0 0.0 0.0" />
-	</light>
+    <dynamic_object name="whale_fall">
+        <origin xyz="1.5 3.5 0.5" rpy="1.571 0 -0.9" />
+        <inertial>
+            <origin xyz="2 2 0" rpy="0 0 0" />
+            <mass value="5" />
+            <inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0 " rpy="0 0 0" />
+            <geometry>
+                <mesh filename="${CS225A_URDF_FOLDER}/test_objects/meshes/visual/whaleFall.obj" />
+            </geometry>
+            <material name="material">
+                <color rgba="0 0 0 1" />
+            </material>
+        </visual>
+    </dynamic_object>
 
-	<camera name="camera_fixed">
-		<position xyz="4.0 0.0 0.0" />
-		<vertical xyz="0.0 0.0 1.0" />
-		<lookat xyz="0.0 0.0 0.0" />
-	</camera>
+    <dynamic_object name="welcome_sign">
+        <origin xyz="-2.1 1 0" rpy="1.571 0 -1.571" />
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <mass value="5" />
+            <inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0 " rpy="0 0 0" />
+            <geometry>
+                <mesh filename="${CS225A_URDF_FOLDER}/test_objects/meshes/visual/welcome_sign.obj" />
+            </geometry>
+            <material name="material">
+                <color rgba="0.66 0.95 16 0.8" />
+            </material>
+        </visual>
+    </dynamic_object>
+
+    <dynamic_object name="deep_sponges">
+        <origin xyz="-4.5 2.5 0" rpy="1.571 0 -1.571" />
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <mass value="5" />
+            <inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0 " rpy="0 0 0" />
+            <geometry>
+                <mesh filename="${CS225A_URDF_FOLDER}/test_objects/meshes/visual/deepSponges.obj" />
+            </geometry>
+            <material name="material">
+                <color rgba="0.66 0.95 16 0.8" />
+            </material>
+        </visual>
+    </dynamic_object>
+
+    <dynamic_object name="rubber_duck">
+        <origin xyz="4 -6 0.5" rpy="1.571 0 -1.571" />
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <mass value="5" />
+            <inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0 " rpy="0 0 0" />
+            <geometry>
+                <mesh filename="${CS225A_URDF_FOLDER}/test_objects/meshes/visual/rubberDuck.obj" />
+            </geometry>
+            <material name="material">
+                <color rgba="0.66 0.95 16 0.8" />
+            </material>
+        </visual>
+
+        <visual>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.25 0.25 0.25" />
+            </geometry>
+            <material name="material">
+                <color rgba="0 1 0.95 0.8" />
+            </material>
+        </visual>
+
+        <collision>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.25 0.25 0.25" />
+            </geometry>
+        </collision>
+    </dynamic_object>
+
+    <dynamic_object name="trash_can">
+        <origin xyz="-1.25 1.75 0.4" rpy="1.571 0 -1.571" />
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <mass value="5" />
+            <inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0 " rpy="0 0 0" />
+            <geometry>
+                <mesh filename="${CS225A_URDF_FOLDER}/test_objects/meshes/visual/crate.obj" />
+            </geometry>
+            <material name="material">
+                <color rgba="0.66 0.95 16 0.8" />
+            </material>
+        </visual>
+
+        <visual>
+            <origin xyz="-0.3975 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.05 0.8 0.7" />
+            </geometry>
+            <material name="material">
+                <color rgba="0 1 0.95 0.8" />
+            </material>
+        </visual>
+
+        <collision>
+            <origin xyz="-0.3975 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.05 0.80 0.7" />
+            </geometry>
+        </collision>
+        
+        <visual>
+            <origin xyz="0.3975 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.05 0.80 0.7" />
+            </geometry>
+            <material name="material">
+                <color rgba="1 0 0 0.8" />
+            </material>
+        </visual>
+
+        <collision>
+            <origin xyz="0.3975 0 0" rpy="0 0 0" />
+            <geometry>
+                <box size="0.05 0.80 0.7" />
+            </geometry>
+        </collision> 
+        
+    </dynamic_object>
+
+    <dynamic_object name="rock">
+        <origin xyz="2 -5 0.35" rpy="1.571 0 -1.571" />
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <mass value="5" />
+            <inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0 " rpy="0 0 0" />
+            <geometry>
+                <mesh filename="${CS225A_URDF_FOLDER}/test_objects/meshes/visual/rock.obj" />
+            </geometry>
+            <material name="material">
+                <color rgba="0.66 0.95 16 0.8" />
+            </material>
+        </visual>
+    </dynamic_object>
+
+    <dynamic_object name="bin">
+        <origin xyz="-1.25 1.75 0.4" rpy="1.571 0 -1.571" />
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <mass value="5" />
+            <inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 -0.3975" rpy="0 0 0" />
+            <geometry>
+                <box size="0.7 0.80 0.05" />
+            </geometry>
+            <material name="material">
+                <color rgba="0 1 0.95 0.8" />
+            </material>
+        </visual>
+
+        <collision>
+            <origin xyz="0 0 -0.3975" rpy="0 0 0" />
+            <geometry>
+                <box size="0.7 0.80 0.05" />
+            </geometry>
+        </collision>
+        
+        <visual>
+            <origin xyz="0 0 0.3975" rpy="0 0 0" />
+            <geometry>
+                <box size="0.7 0.80 0.05" />
+            </geometry>
+            <material name="material">
+                <color rgba="1 0 0 0.8" />
+            </material>
+        </visual>
+
+        <collision>
+            <origin xyz="0 0 0.3975" rpy="0 0 0" />
+            <geometry>
+                <box size="0.7 0.80 0.05" />
+            </geometry>
+        </collision> 
+    </dynamic_object>
+        
+
+    <light name="light1" type="directional">
+        <position xyz="2.0 2.0 2.0" />
+        <lookat xyz="0.0 0.0 0.0" />
+    </light>
+
+    <camera name="camera_fixed">
+        <position xyz="4.0 1.0 3.0" />
+        <vertical xyz="0.0 0.0 1.0" />
+        <lookat xyz="0.0 0.0 0.0" />
+    </camera>
 
 </world>

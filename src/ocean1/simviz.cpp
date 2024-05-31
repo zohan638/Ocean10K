@@ -37,17 +37,12 @@ using namespace std;
 VectorXd ui_torques;
 mutex mutex_torques, mutex_update;
 
-//NEW VARIALBES
-Vector3d newCamLookat;
-Vector3d newCamVert;
-Vector3d newCamPos;
-
 // specify urdf and robots 
 static const string robot_name = "ocean1";
 static const string camera_name = "camera_fixed";
 
 // dynamic objects information
-const vector<std::string> object_names = {"cup", "bottle"};
+const vector<std::string> object_names = {"whale_fall", "plastic_bag", "welcome_sign", "deep_sponges", "rubber_duck", "trash_can", "rope"};
 vector<Affine3d> object_poses;
 vector<VectorXd> object_velocities;
 const int n_objects = object_names.size();
@@ -56,7 +51,6 @@ const int n_objects = object_names.size();
 void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim);
 
 int main() {
-	
 	Sai2Model::URDF_FOLDERS["CS225A_URDF_FOLDER"] = string(CS225A_URDF_FOLDER);
 	static const string robot_file = string(CS225A_URDF_FOLDER) + "/ocean1/ocean1.urdf";
 	static const string world_file = string(OCEAN1_FOLDER) + "/world_ocean1.urdf";
@@ -74,14 +68,14 @@ int main() {
 	// load graphics scene
 	auto graphics = std::make_shared<Sai2Graphics::Sai2Graphics>(world_file, camera_name, false);
 	graphics->setBackgroundColor(66.0/255, 135.0/255, 245.0/255);  // set blue background 	
-	//graphics->showLinkFrame(true, robot_name, "link7", 0.15);  // can add frames for different links
+	// graphics->showLinkFrame(true, robot_name, "link7", 0.15);  // can add frames for different links
 	// graphics->getCamera(camera_name)->setClippingPlanes(0.1, 50);  // set the near and far clipping planes 
 	graphics->addUIForceInteraction(robot_name);
 
 	// load robots
 	auto robot = std::make_shared<Sai2Model::Sai2Model>(robot_file, false);
-	//robot->setQ();
-	//robot->setDq();
+	// robot->setQ();
+	// robot->setDq();
 	robot->updateModel();
 	ui_torques = VectorXd::Zero(robot->dof());
 
@@ -111,29 +105,17 @@ int main() {
 
 	// start simulation thread
 	thread sim_thread(simulation, sim);
-		
-	VectorXd robot_q = robot->q(); //Makes robot_q the joint angles of the robot (since the body is prismatic, this is fine)
 
 	// while window is open:
 	while (graphics->isWindowOpen()) {
-		robot_q = redis_client.getEigen(JOINT_ANGLES_KEY); //Updates the joint angles on each iteration
-        graphics->updateRobotGraphics(robot_name, robot_q);
+        graphics->updateRobotGraphics(robot_name, redis_client.getEigen(JOINT_ANGLES_KEY));
 		{
 			lock_guard<mutex> lock(mutex_update);
 			for (int i = 0; i < n_objects; ++i) {
 				graphics->updateObjectGraphics(object_names[i], object_poses[i]);
 			}
 		}
-
-		newCamPos = robot_q.head(3) + Vector3d(-2, 0, 3); //Sets the camera position
-		newCamVert = Vector3d::UnitZ(); //Sets the reference vertical for the camera
-		newCamLookat = robot_q.head(3); //Tells the camera what to look at
-		
-		
 		graphics->renderGraphicsWorld();
-		// graphics->setCameraPose(camera_name, newCamPos, newCamVert, newCamLookat); //Updates the camera pose
-		// graphics->render(camera_name); //Renders the new camera
-
 		{
 			lock_guard<mutex> lock(mutex_torques);
 			ui_torques = graphics->getUITorques(robot_name);
@@ -165,7 +147,6 @@ void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
 
 	while (fSimulationRunning) {
 		timer.waitForNextLoop();
-
 		VectorXd control_torques = redis_client.getEigen(JOINT_TORQUES_COMMANDED_KEY);
 		{
 			lock_guard<mutex> lock(mutex_torques);
