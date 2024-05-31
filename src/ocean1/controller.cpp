@@ -252,9 +252,8 @@ int main() {
     cout << base_selection_matrix << endl;
 	auto base_task = std::make_shared<Sai2Primitives::JointTask>(robot, base_selection_matrix);
 	base_task->setGains(400, 40, 0);
-	
-	VectorXd q_desired = robot->q();
 
+	VectorXd q_desired = robot->q();
 
 	// dual arm partial joint task 
     int num_arm_joints = 14;
@@ -319,16 +318,16 @@ int main() {
 		if (state == POSTURE) {
 			// update task model 
 			N_prec.setIdentity();
-			posture_task->updateTaskModel(N_prec);
+			arms_posture_task->updateTaskModel(N_prec);
 
-			command_torques = posture_task->computeTorques();
+			command_torques = arms_posture_task->computeTorques();
 
 			if ((robot->q() - q_desired).norm() < 1e-2) {
 				cout << "Posture To Motion" << endl;
 				for (auto name : control_links) {
 					pose_tasks[name]->reInitializeTask();
 				}
-				posture_task->reInitializeTask();
+				arms_posture_task->reInitializeTask();
 
 				state = MOTION;
 			}
@@ -378,7 +377,7 @@ int main() {
             N_prec = robot->nullspaceMatrix(J_pose_tasks); 
                 
             // redundancy completion
-            posture_task->updateTaskModel(N_prec); //updates task to be in null space of previous task
+            arms_posture_task->updateTaskModel(N_prec); //updates task to be in null space of previous task
 
             // -------- set task goals and compute control torques
             command_torques.setZero(); //set the command torques equal to 0
@@ -414,11 +413,11 @@ int main() {
 				// }
 
 				//Yaw sinusoidal rotation
-				if (name == "endEffector_left") {
-					pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d((0.1 * sin(M_PI * time)), 0, 0));
-				} else {
-					pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d(-(0.1 * sin(M_PI * time)), 0, 0));
-				}
+				// if (name == "endEffector_left") {
+				// 	pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d((0.1 * sin(M_PI * time)), 0, 0));
+				// } else {
+				// 	pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d(-(0.1 * sin(M_PI * time)), 0, 0));
+				// }
 
 				//Roll sinusoidal rotation
 				// if (name == "endEffector_left") {
@@ -473,7 +472,7 @@ int main() {
 			}
 
 			// posture task and coriolis compensation
-			command_torques += posture_task->computeTorques() + robot->coriolisForce();
+			command_torques += arms_posture_task->computeTorques() + robot->coriolisForce();
         }
 		// execute redis write callback
 		redis_client.setEigen(JOINT_TORQUES_COMMANDED_KEY, command_torques);
