@@ -1,7 +1,7 @@
 # Ocean 10K
 
 [![HitCount](https://hits.dwyl.com/zohan638/CS225A-Project.svg?style=flat-square)](http://hits.dwyl.com/zohan638/CS225A-Project)
-
+![Build Status](https://github.com/zohan638/CS225A-Project/actions/workflows/c-cpp.yml/badge.svg)
 
 ## Dependencies
 This project depends on sai2 libraries. The install instructions can be found
