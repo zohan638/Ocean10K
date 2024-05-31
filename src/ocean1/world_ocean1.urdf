@@ -1,6 +1,6 @@
 <?xml version="1.0" ?>
 
-<world name="demo_world" gravity="0.0 0.0 -9.81">
+<world name="demo_world" gravity="0.0 0.0 0.0">
 
 	<robot name="ocean1">
 		<model dir="${CS225A_URDF_FOLDER}/ocean1" path="ocean1.urdf" name="ocean1" />
@@ -40,6 +40,39 @@
 	            <mesh filename="${CS225A_URDF_FOLDER}/test_objects/meshes/visual/cup.obj" />
 	        </geometry>
 	    </visual>
+
+		<visual>
+	        <origin xyz="0 0 0.06" rpy="0 0 0" />
+	        <geometry>
+	            <box size="0.1 0.1 0.15" />
+	        </geometry>
+	        <material name="material">
+		        <color rgba="1 1 1 1.0" />
+	        </material>
+	    </visual>
+
+	    <collision>
+	        <origin xyz="0 0 0.06" rpy="0 0 0" />
+	        <geometry>
+	            <box size="0.1 0.1 0.15" />
+	        </geometry>
+	    </collision>
+	</dynamic_object>
+
+	<dynamic_object name="bottle">
+		<origin xyz="1.0 0.0 -0.5" rpy="0 0 0" />
+		<inertial>
+        	<origin xyz="0 0 0" rpy="0 0 0" />
+        	<mass value="10" />
+        	<inertia ixx="1" iyy="1" izz="1" ixy="0" ixz="0" iyz="0" />
+      	</inertial>
+
+	    <!-- <visual>
+	        <origin xyz="0 0 0" rpy="0 0 0" />
+			<geometry>
+	            <mesh filename="${CS225A_URDF_FOLDER}/test_objects/meshes/visual/bottle.obj" />
+	        </geometry>
+	    </visual> -->
 
 		<visual>
 	        <origin xyz="0 0 0.06" rpy="0 0 0" />
