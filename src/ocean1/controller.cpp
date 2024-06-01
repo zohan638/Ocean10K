@@ -208,18 +208,12 @@ int main() {
 	Vector3d leftHandRef = robot->position("endEffector_left", Vector3d(0, 0, 0));
 	Vector3d rightHandRef = robot->position("endEffector_right", Vector3d(0, 0, 0));
 	handReference = leftHandRef - rightHandRef; //Initialize hand reference vector
-	
 	Vector3d handDifference;
 	handDifference = leftHandRef - rightHandRef; //Initialize hand difference vector
-
-	//NEW CODE
-	int k = 0;
-
 	Vector3d goalBodyOrientation;
-
 	Vector3d endEffectorPosSum;
 	endEffectorPosSum = Vector3d(0, 0, 0);
-
+	int k = 0;
     for (auto name : control_links) {
         endEffectorPosSum += robot->position(control_links[k], control_points[k]);
         ++k;
@@ -239,7 +233,6 @@ int main() {
 
 	Vector3d goalBodyPosition;
 	goalBodyPosition = endEffectorPosAverage - endEffectorToBodyDistance; //Initialize goal body position
-	//END NEW CODE
 
     for (int i = 0; i < control_links.size(); ++i) {        
         Affine3d compliant_frame = Affine3d::Identity();
@@ -295,8 +288,6 @@ int main() {
 		robot->setDq(redis_client.getEigen(JOINT_VELOCITIES_KEY));
 		robot->updateModel();
 
-		// robot_controller->updateControllerTaskModels();
-
         // read haptic device state from Redis
 		redis_client.receiveAllFromGroup();
 
@@ -307,6 +298,7 @@ int main() {
 			robot->linearVelocityInWorld(link_names[0]);
 		haptic_input_left.robot_angular_velocity =
 			robot->angularVelocityInWorld(link_names[0]);
+		// send left end-effector simulated force sensor forces to haptic devices
 		haptic_input_left.robot_sensed_force = redis_client.getEigen(SIMULATED_COMMANDED_FORCE_KEY_SUFFIX_LEFT);
 		haptic_output_left = haptic_controller_left->computeHapticControl(haptic_input_left);
 
@@ -316,27 +308,9 @@ int main() {
 			robot->linearVelocityInWorld(link_names[1]);
 		haptic_input_right.robot_angular_velocity =
 			robot->angularVelocityInWorld(link_names[1]);
+		// send right end-effector simulated force sensor forces to haptic devices
 		haptic_input_right.robot_sensed_force = redis_client.getEigen(SIMULATED_COMMANDED_FORCE_KEY_SUFFIX_RIGHT);
 		haptic_output_right = haptic_controller_right->computeHapticControl(haptic_input_right);
-
-		// // send simulated force sensor forces to haptic devices
-        // auto right_hand_force = redis_client.getEigen(SIMULATED_COMMANDED_FORCE_KEY_SUFFIX_RIGHT);
-        // auto left_hand_force = redis_client.getEigen(SIMULATED_COMMANDED_FORCE_KEY_SUFFIX_LEFT);
-
-		// if (right_hand_force.norm() > THRESHOLD) {
-		// 	right_hand_force *= 0;
-		// } else {
-		// 	right_hand_force = - MAX_HAPTIC_FORCE * (right_hand_force / right_hand_force.norm());
-		// }
-        // if (left_hand_force.norm() > THRESHOLD) {
-		// 	left_hand_force *= 0;	
-		// } else {
-		// 	left_hand_force = - MAX_HAPTIC_FORCE * (left_hand_force / left_hand_force.norm());
-		// }
-        // // haptic_output_left.device_command_force = R_world_to_haptic_frame * left_hand_force;
-        // // haptic_output_right.device_command_force = R_world_to_haptic_frame * right_hand_force;
-		// haptic_output_left.device_command_force += left_hand_force - 0 * haptic_input_left.device_linear_velocity;
-        // haptic_output_right.device_command_force += right_hand_force - 0 * haptic_input_right.device_linear_velocity;
 
 		redis_client.sendAllFromGroup();
 	
@@ -358,7 +332,6 @@ int main() {
 			}
 		} else if (state == MOTION) {
             // update body task model
-			//NEW CODE
 			int j = 0;
 
 			endEffectorPosSum = Vector3d(0, 0, 0);
@@ -368,18 +341,17 @@ int main() {
 			}	
 
 			endEffectorPosAverage = endEffectorPosSum/2;
-			goalBodyPosition = endEffectorPosAverage - endEffectorToBodyDistance; //Calculate the body position as the end effector location minus some offset
+			goalBodyPosition = endEffectorPosAverage - endEffectorToBodyDistance; // Calculate the body position as the end effector location minus some offset
 
 			leftHandPos = robot->position("endEffector_left", Vector3d(0, 0, 0));
 			rightHandPos = robot->position("endEffector_right", Vector3d(0, 0, 0));
-			handDifference = leftHandPos - rightHandPos; //Get vector between end effectors
-			goalBodyOrientation = calculate_rotations(handDifference, handReference); //Calculate the angle between the reference vector between end effectors and the current one
-			//END NEW CODE
+			handDifference = leftHandPos - rightHandPos; // Get vector between end effectors
+			goalBodyOrientation = calculate_rotations(handDifference, handReference); // Calculate the angle between the reference vector between end effectors and the current one
 
             N_prec.setIdentity();
 			
-            base_task->updateTaskModel(N_prec); //base task is set to identity meaning its highest priority
-            N_prec = base_task->getTaskAndPreviousNullspace(); //Everything that uses N_prec is lower priority
+            base_task->updateTaskModel(N_prec); // base task is set to identity meaning its highest priority
+            N_prec = base_task->getTaskAndPreviousNullspace(); // Everything that uses N_prec is lower priority
 
 			//cout << handReference << endl << "\n";
 			//cout << handDifference << endl << "\n";
@@ -390,7 +362,7 @@ int main() {
 
             // update pose task models
             for (auto it = pose_tasks.begin(); it != pose_tasks.end(); ++it) {
-                it->second->updateTaskModel(N_prec); //updates task to be in nullspace of previous tasks??
+                it->second->updateTaskModel(N_prec); // updates task to be in nullspace of previous tasks??
                 // N_prec = it->second->getTaskAndPreviousNullspace(); //should this be activated?
             }
 
@@ -402,14 +374,13 @@ int main() {
             N_prec = robot->nullspaceMatrix(J_pose_tasks); 
                 
             // redundancy completion
-            arms_posture_task->updateTaskModel(N_prec); //updates task to be in null space of previous task
+            arms_posture_task->updateTaskModel(N_prec); // updates task to be in null space of previous task
 
             // -------- set task goals and compute control torques
-            command_torques.setZero(); //set the command torques equal to 0
+            command_torques.setZero(); // set the command torques equal to 0
 
             // base task
-            command_torques += base_task->computeTorques(); //set the command torques of the base task
-
+            command_torques += base_task->computeTorques(); // set the command torques of the base task
 
             // pose tasks
             int i = 0;
@@ -452,38 +423,10 @@ int main() {
 				// }
 
 			// pose tasks
-			// pose_tasks["endEffector_right"]->setGoalPosition(starting_pose[0].translation());
-			// command_torques += pose_tasks["endEffector_right"]->computeTorques();
-			// pose_tasks["endEffector_right"]->setGoalPosition(
-			// 	starting_pose[1].translation() + Vector3d(
-			// 		0, (-0.2 * cos(M_PI * time)), (0.2 * sin(M_PI * time))
-			// 	)
-			// );
-			// cout << "???? robot goal position: \n";
-			// cout << haptic_output_left.robot_goal_position;
-			// cout << "\n\n";
 			pose_tasks["endEffector_left"]->setGoalPosition(haptic_output_left.robot_goal_position);
 			command_torques += pose_tasks["endEffector_left"]->computeTorques();
 			pose_tasks["endEffector_right"]->setGoalPosition(haptic_output_right.robot_goal_position);
 			command_torques += pose_tasks["endEffector_right"]->computeTorques();
-
-			// int i = 0;
-			// for (auto name : control_links) {
-				// pose_tasks[name]->setGoalPosition(
-				// 	haptic_output.robot_goal_position);
-				// pose_tasks[name]->setGoalOrientation(
-				// 	haptic_output.robot_goal_orientation);
-				// cout << "<<<<<<<<\n";
-				// cout << "Haptic output robot position: \n" << haptic_output.robot_goal_position << "\n";
-				// cout << "<<<<<<<<\n";
-				// pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d(0, (-0.2 * cos(M_PI * time)), (0.2 * sin(M_PI * time))));
-				// pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d((-0.2 * cos(M_PI * time)), 0, (0.2 * sin(M_PI * time))));
-				// pose_tasks[name]->setGoalPosition(starting_pose[i].translation() + Vector3d((-0.2 * cos(M_PI * time)), (0.2 * sin(M_PI * time)), 0));
-				// command_torques += pose_tasks[name]->computeTorques();
-				// ++i;
-			// }
-
-			// TODO (tashakim): set up haptic feedback
 
 			// TODO (tashakim): set up state machine for button press
 			// state machine for button presses
