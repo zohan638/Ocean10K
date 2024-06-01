@@ -27,6 +27,8 @@ using namespace Eigen;
 using namespace Sai2Primitives;
 using namespace Sai2Common::ChaiHapticDriverKeys;
 
+const double MAX_HAPTIC_FORCE = 3.0;
+const double THRESHOLD = 1.0;
 bool runloop = false;
 void sighandler(int){runloop = false;}
 
@@ -129,10 +131,12 @@ int main() {
 		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_FORCE_KEY_SUFFIX, 0)));
     auto haptic_controller_left =
 		make_shared<Sai2Primitives::HapticDeviceController>(
-			device_limits_left, robot->transformInWorld(link_names[0]), device_home_pose);
+			device_limits_left, robot->transformInWorld(link_names[0]), device_home_pose, AngleAxisd(M_PI, Vector3d::UnitZ()).toRotationMatrix());
 	haptic_controller_left->setScalingFactors(3.5);
+	haptic_controller_left->setReductionFactorForce(0.1);
 	haptic_controller_left->setHapticControlType(Sai2Primitives::HapticControlType::HOMING);
 	haptic_controller_left->disableOrientationTeleop();
+	haptic_controller_left->setVariableDampingGainsPos(vector<double>{0.05, 0.15}, vector<double>{10, 40});
 	Sai2Primitives::HapticControllerInput haptic_input_left;
 	Sai2Primitives::HapticControllerOtuput haptic_output_left;
 	
@@ -142,10 +146,12 @@ int main() {
 		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_FORCE_KEY_SUFFIX, 1)));	
     auto haptic_controller_right =
 		make_shared<Sai2Primitives::HapticDeviceController>(
-			device_limits_right, robot->transformInWorld(link_names[1]), device_home_pose);
+			device_limits_right, robot->transformInWorld(link_names[1]), device_home_pose, AngleAxisd(M_PI, Vector3d::UnitZ()).toRotationMatrix());
 	haptic_controller_right->setScalingFactors(3.5);
+	haptic_controller_right->setReductionFactorForce(0.1);
 	haptic_controller_right->setHapticControlType(Sai2Primitives::HapticControlType::HOMING);
 	haptic_controller_right->disableOrientationTeleop();
+	haptic_controller_right->setVariableDampingGainsPos(vector<double>{0.05, 0.15}, vector<double>{10, 40});
 	Sai2Primitives::HapticControllerInput haptic_input_right;
 	Sai2Primitives::HapticControllerOtuput haptic_output_right;
     
@@ -301,7 +307,7 @@ int main() {
 			robot->linearVelocityInWorld(link_names[0]);
 		haptic_input_left.robot_angular_velocity =
 			robot->angularVelocityInWorld(link_names[0]);
-		haptic_input_left.robot_sensed_force = Vector3d::Zero();
+		haptic_input_left.robot_sensed_force = redis_client.getEigen(SIMULATED_COMMANDED_FORCE_KEY_SUFFIX_LEFT);
 		haptic_output_left = haptic_controller_left->computeHapticControl(haptic_input_left);
 
 		haptic_input_right.robot_position = robot->positionInWorld(link_names[1]);
@@ -310,8 +316,27 @@ int main() {
 			robot->linearVelocityInWorld(link_names[1]);
 		haptic_input_right.robot_angular_velocity =
 			robot->angularVelocityInWorld(link_names[1]);
-		haptic_input_right.robot_sensed_force = Vector3d::Zero();
+		haptic_input_right.robot_sensed_force = redis_client.getEigen(SIMULATED_COMMANDED_FORCE_KEY_SUFFIX_RIGHT);
 		haptic_output_right = haptic_controller_right->computeHapticControl(haptic_input_right);
+
+		// // send simulated force sensor forces to haptic devices
+        // auto right_hand_force = redis_client.getEigen(SIMULATED_COMMANDED_FORCE_KEY_SUFFIX_RIGHT);
+        // auto left_hand_force = redis_client.getEigen(SIMULATED_COMMANDED_FORCE_KEY_SUFFIX_LEFT);
+
+		// if (right_hand_force.norm() > THRESHOLD) {
+		// 	right_hand_force *= 0;
+		// } else {
+		// 	right_hand_force = - MAX_HAPTIC_FORCE * (right_hand_force / right_hand_force.norm());
+		// }
+        // if (left_hand_force.norm() > THRESHOLD) {
+		// 	left_hand_force *= 0;	
+		// } else {
+		// 	left_hand_force = - MAX_HAPTIC_FORCE * (left_hand_force / left_hand_force.norm());
+		// }
+        // // haptic_output_left.device_command_force = R_world_to_haptic_frame * left_hand_force;
+        // // haptic_output_right.device_command_force = R_world_to_haptic_frame * right_hand_force;
+		// haptic_output_left.device_command_force += left_hand_force - 0 * haptic_input_left.device_linear_velocity;
+        // haptic_output_right.device_command_force += right_hand_force - 0 * haptic_input_right.device_linear_velocity;
 
 		redis_client.sendAllFromGroup();
 	
@@ -483,6 +508,8 @@ int main() {
 	timer.printInfoPostRun();
 	redis_client.setEigen(JOINT_TORQUES_COMMANDED_KEY, 0 * command_torques);  // back to floating
     redis_client.setEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(COMMANDED_FORCE_KEY_SUFFIX, 0),
+						  Vector3d::Zero());
+	redis_client.setEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(COMMANDED_FORCE_KEY_SUFFIX, 1),
 						  Vector3d::Zero());
     redis_client.setEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(COMMANDED_TORQUE_KEY_SUFFIX, 0),
 						  Vector3d::Zero());
