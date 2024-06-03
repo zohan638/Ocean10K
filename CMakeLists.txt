@@ -5,8 +5,11 @@ SET(CMAKE_BUILD_TYPE "Release")
 
 # Mac OS X global build options
 if(CMAKE_SYSTEM_NAME MATCHES Darwin)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/opt/homebrew/include")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -I/opt/homebrew/src")
 endif()
+
+# Include project-specific directories first
+include_directories(${PROJECT_SOURCE_DIR}/src/ocean1)
 
 # set common dependencies
 # - eigen3
@@ -72,7 +75,7 @@ find_library(GLFW_LIBRARY glfw)
 # - hiredis
 find_library(HIREDIS_LIBRARY hiredis)
 
-
+# Set the common libraries
 set(CS225A_COMMON_LIBRARIES
 	${CHAI3D_LIBARIES}
 	${SAI2-INTERFACES_LIBRARIES}
