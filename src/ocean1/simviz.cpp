@@ -37,6 +37,13 @@ mutex mutex_torques, mutex_update;
 Vector3d newCamLookat;
 Vector3d newCamVert;
 Vector3d newCamPos;
+const double GROUND_Z = 0.0; // z-coordinate of the ground plane
+const double TOUCH_TOLERANCE = 0.05; // tolerance to check if the object is touching the ground
+const double GROUND_X_MIN = -6.0; // x-coordinate min boundary of the ground
+const double GROUND_X_MAX = 6.0; // x-coordinate max boundary of the ground
+const double GROUND_Y_MIN = -6.0; // y-coordinate min boundary of the ground
+const double GROUND_Y_MAX = 6.0; // y-coordinate max boundary of the ground
+int score = 0; // score variable
 
 // specify urdf and robots 
 static const string robot_name = "ocean1";
@@ -194,13 +201,26 @@ void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
         redis_client.setEigen(JOINT_VELOCITIES_KEY, sim->getJointVelocities(robot_name));
 
 		// update object information 
-		{
-			lock_guard<mutex> lock(mutex_update);
-			for (int i = 0; i < n_objects; ++i) {
-				object_poses[i] = sim->getObjectPose(object_names[i]);
-				object_velocities[i] = sim->getObjectVelocity(object_names[i]);
-			}
-		}
+        {
+            lock_guard<mutex> lock(mutex_update);
+            for (int i = 0; i < n_objects; ++i) {
+                object_poses[i] = sim->getObjectPose(object_names[i]);
+                object_velocities[i] = sim->getObjectVelocity(object_names[i]);
+                // Check if object is within the ground boundaries and touching the ground
+                Vector3d object_pos = object_poses[i].translation();
+                if (object_pos.z() <= (GROUND_Z + TOUCH_TOLERANCE) &&
+                    object_pos.z() >= (GROUND_Z - TOUCH_TOLERANCE) &&
+                    object_pos.x() >= GROUND_X_MIN &&
+                    object_pos.x() <= GROUND_X_MAX &&
+                    object_pos.y() >= GROUND_Y_MIN &&
+                    object_pos.y() <= GROUND_Y_MAX) {
+                    score++;
+                    std::cout << "Score: " << score << std::endl;
+                    // Move the object slightly above the ground to prevent multiple scoring
+                    // sim->setObjectPosition(object_names[i], object_pos + Vector3d(0, 0, TOUCH_TOLERANCE + 0.01));
+                }
+            }
+        }
 	}
 	timer.stop();
 	cout << "\nSimulation loop timer stats:\n";
