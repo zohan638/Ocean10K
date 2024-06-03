@@ -44,6 +44,7 @@ const double GROUND_X_MAX = 6.0; // x-coordinate max boundary of the ground
 const double GROUND_Y_MIN = -6.0; // y-coordinate min boundary of the ground
 const double GROUND_Y_MAX = 6.0; // y-coordinate max boundary of the ground
 int score = 0; // score variable
+const int MAX_SCORE = 3; // Maximum score to finish the game
 
 // specify urdf and robots 
 static const string robot_name = "ocean1";
@@ -218,6 +219,13 @@ void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
                     std::cout << "Score: " << score << std::endl;
                     // Move the object slightly above the ground to prevent multiple scoring
                     // sim->setObjectPosition(object_names[i], object_pos + Vector3d(0, 0, TOUCH_TOLERANCE + 0.01));
+
+					// Check if maximum score is reached
+                    if (score >= MAX_SCORE) {
+                        std::cout << "Maximum score reached! Ending simulation." << std::endl;
+                        fSimulationRunning = false;
+                        break;
+                    }
                 }
             }
         }
