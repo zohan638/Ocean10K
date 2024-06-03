@@ -1,4 +1,8 @@
-// @file simviz.cpp
+/**
+ * @file simviz.cpp
+ * @brief Simulation and visualization of panda robot with 1 DOF gripper 
+ * 
+ */
 
 #include <math.h>
 #include <signal.h>
@@ -39,11 +43,11 @@ Vector3d newCamVert;
 Vector3d newCamPos;
 
 // specify urdf and robots 
-static const string robot_name = "ocean1";
+static const string robot_name = "robot_model_v2"; //"ocean1";
 static const string camera_name = "camera_fixed";
 
 // dynamic objects information
-const vector<std::string> object_names = {"cup", "bottle"};
+const vector<std::string> object_names = {"cup"};
 vector<Affine3d> object_poses;
 vector<VectorXd> object_velocities;
 const int n_objects = object_names.size();
@@ -54,9 +58,11 @@ void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim);
 int main() {
 	
 	Sai2Model::URDF_FOLDERS["CS225A_URDF_FOLDER"] = string(CS225A_URDF_FOLDER);
-	static const string robot_file = string(CS225A_URDF_FOLDER) + "/ocean1/ocean1.urdf";
+	static const string robot_file = string(CS225A_URDF_FOLDER) + "/Ocean1k/robot_model_v2.urdf"; //"/ocean1/ocean1.urdf";
 	static const string world_file = string(OCEAN1_FOLDER) + "/world_ocean1.urdf";
 	std::cout << "Loading URDF world model file: " << world_file << endl;
+
+
 
 	// start redis client
 	auto redis_client = Sai2Common::RedisClient();
@@ -83,13 +89,6 @@ int main() {
 
 	// load simulation world
 	auto sim = std::make_shared<Sai2Simulation::Sai2Simulation>(world_file, false);
-	
-	sim->addSimulatedForceSensor(robot_name, "endEffector_left", Affine3d::Identity(),
-								 10.0);
-	sim->addSimulatedForceSensor(robot_name, "endEffector_right", Affine3d::Identity(),
-								 10.0);
-	graphics->addForceSensorDisplay(sim->getAllForceSensorData()[0]);
-	graphics->addForceSensorDisplay(sim->getAllForceSensorData()[1]);
 	sim->setJointPositions(robot_name, robot->q());
 	sim->setJointVelocities(robot_name, robot->dq());
 
@@ -111,9 +110,6 @@ int main() {
 	redis_client.setEigen(JOINT_ANGLES_KEY, robot->q()); 
 	redis_client.setEigen(JOINT_VELOCITIES_KEY, robot->dq()); 
 	redis_client.setEigen(JOINT_TORQUES_COMMANDED_KEY, 0 * robot->q());
-	redis_client.setEigen(SIMULATED_COMMANDED_FORCE_KEY_SUFFIX_LEFT, Vector3d(0,0,0));
-	redis_client.setEigen(SIMULATED_COMMANDED_FORCE_KEY_SUFFIX_RIGHT, Vector3d(0,0,0));
-
 
 	// start simulation thread
 	thread sim_thread(simulation, sim);
@@ -130,18 +126,15 @@ int main() {
 				graphics->updateObjectGraphics(object_names[i], object_poses[i]);
 			}
 		}
-		graphics->updateDisplayedForceSensor(sim->getAllForceSensorData()[0]);
-		graphics->updateDisplayedForceSensor(sim->getAllForceSensorData()[1]);
-		graphics->renderGraphicsWorld();
 
-		newCamPos = robot_q.head(3) + Vector3d(-2, 0, 3); //Sets the camera position
+		//newCamPos = robot_q.head(3) + Vector3d(0.9, 0, -0.1); //Sets the camera position //Comment out if want default camera
+		//newCamLookat = robot_q.head(3) + Vector3d(1, 0, -0.5); //Tells the camera what to look at //Comment out if want default camera
 		newCamVert = Vector3d::UnitZ(); //Sets the reference vertical for the camera
-		newCamLookat = robot_q.head(3); //Tells the camera what to look at
 		
 		
 		graphics->renderGraphicsWorld();
-		// graphics->setCameraPose(camera_name, newCamPos, newCamVert, newCamLookat); //Updates the camera pose
-		// graphics->render(camera_name); //Renders the new camera
+		graphics->setCameraPose(camera_name, newCamPos, newCamVert, newCamLookat); //Updates the camera pose
+		graphics->render(camera_name); //Renders the new camera
 
 		{
 			lock_guard<mutex> lock(mutex_torques);
@@ -181,15 +174,6 @@ void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
 			sim->setJointTorques(robot_name, control_torques + ui_torques);
 		}
 		sim->integrate();
-		// force sensor data
-		auto force_data = sim->getAllForceSensorData();
-		for (auto force : force_data) {
-			if (force.link_name == "endEffector_right") {
-				redis_client.setEigen(SIMULATED_COMMANDED_FORCE_KEY_SUFFIX_RIGHT, force.force_world_frame);
-			} else if (force.link_name == "endEffector_left") {
-				redis_client.setEigen(SIMULATED_COMMANDED_FORCE_KEY_SUFFIX_LEFT, force.force_world_frame);
-			}
-		}
         redis_client.setEigen(JOINT_ANGLES_KEY, sim->getJointPositions(robot_name));
         redis_client.setEigen(JOINT_VELOCITIES_KEY, sim->getJointVelocities(robot_name));
 
