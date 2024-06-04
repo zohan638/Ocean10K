@@ -29,6 +29,13 @@ void sighandler(int){fSimulationRunning = false;}
 using namespace Eigen;
 using namespace std;
 
+// States 
+enum State {
+	THIRD_PERSON = 0, 
+	FIRST_PERSON = 1,
+	DEBUG_CAM 
+};
+
 // mutex and globals
 VectorXd ui_torques;
 mutex mutex_torques, mutex_update;
@@ -51,7 +58,7 @@ static const string robot_name = "ocean1";
 static const string camera_name = "camera_fixed";
 
 // dynamic objects information
-const vector<std::string> object_names = {"cup", "bottle"};
+const vector<std::string> object_names = {"plastic_bag", "rope", "whale_fall", "welcome_sign", "deep_sponges", "rubber_duck", "trash_can", "rock", "bin"};
 vector<Affine3d> object_poses;
 vector<VectorXd> object_velocities;
 const int n_objects = object_names.size();
@@ -128,6 +135,8 @@ int main() {
 		
 	VectorXd robot_q = robot->q(); //Makes robot_q the joint angles of the robot (since the body is prismatic, this is fine)
 
+	// initial state 
+	int state = DEBUG_CAM;
 	// while window is open:
 	while (graphics->isWindowOpen()) {
 		robot_q = redis_client.getEigen(JOINT_ANGLES_KEY); //Updates the joint angles on each iteration
@@ -142,9 +151,22 @@ int main() {
 		graphics->updateDisplayedForceSensor(sim->getAllForceSensorData()[1]);
 		graphics->renderGraphicsWorld();
 
-		newCamPos = robot_q.head(3) + Vector3d(-2, 0, 3); //Sets the camera position
+		if (state == FIRST_PERSON) {
+			newCamPos = robot_q.head(3) + Vector3d(0.9, 0, 1.5); //Sets the camera position //Comment out if want default camera
+			newCamLookat = robot_q.head(3) + Vector3d(1, 0, -0.5); //Tells the camera what to look at //Comment out if want default camera
+		} else if (state == THIRD_PERSON) {
+			newCamPos = robot_q.head(3) + Vector3d(0.0, 0, 1.5); //Sets the camera position //Comment out if want default camera
+			newCamLookat = robot_q.head(3) + Vector3d(1, 0, 0.7); //Tells the camera what to look at //Comment out if want default camera
+		} else {
+
+		}
+
 		newCamVert = Vector3d::UnitZ(); //Sets the reference vertical for the camera
-		newCamLookat = robot_q.head(3); //Tells the camera what to look at
+		
+		
+		graphics->renderGraphicsWorld();
+		graphics->setCameraPose(camera_name, newCamPos, newCamVert, newCamLookat); //Updates the camera pose
+		graphics->render(camera_name); //Renders the new camera
 		
 		
 		graphics->renderGraphicsWorld();
