@@ -180,11 +180,11 @@ LINKS: LEFT ARM
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
       <geometry>
         <!-- <mesh filename="ocean1_graphics/endEffectorWPalm_left.obj"/> -->
-        <!-- <mesh filename="ocean1_graphics/HandO2.obj"/> -->
+        <mesh filename="ocean1_graphics/HandO2.obj"/>
         <!-- <mesh filename="ocean1_graphics/HandO2_small.obj"/> -->
         <!-- <mesh filename="ocean1_graphics/HandO2_with_flag.obj"/> -->
         <!-- <mesh filename="ocean1_graphics/HandO2_open.obj"/> -->
-        <box size="0.1 0.1 0.1"/>
+        <!-- <box size="0.1 0.1 0.1"/> -->
       </geometry>
     </visual>
     <!-- TODO: implement aabb collision detection (or make coarser collision mesh) -->
@@ -297,12 +297,12 @@ LINKS: RIGHT ARM
       <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
       <geometry>
         <!-- <mesh filename="ocean1_graphics/endEffectorWPalm_right.obj"/> -->
-        <!-- <mesh filename="ocean1_graphics/HandO2.obj"/> -->
+        <mesh filename="ocean1_graphics/HandO2.obj"/>
         <!-- <mesh filename="ocean1_graphics/HandO2_small.obj"/> -->
         <!-- <mesh filename="ocean1_graphics/HandO2_with_flag.obj"/> -->
         <!-- <mesh filename="ocean1_graphics/HandO2_open.obj"/> -->
         <!-- <mesh filename="ocean1_graphics/HandO2_half_open.obj"/> -->
-        <box size="0.1 0.1 0.1"/>
+        <!-- <box size="0.1 0.1 0.1"/> -->
       </geometry>
     </visual>
     <!-- TODO: implement aabb collision detection (or make coarser collision mesh) -->
