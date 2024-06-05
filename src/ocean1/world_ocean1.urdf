@@ -92,6 +92,24 @@
 	    </collision>
 	</dynamic_object>
 
+    <dynamic_object name="welcome_sign">
+        <origin xyz="-2.1 1 0" rpy="1.571 0 -1.571" />
+        <inertial>
+            <origin xyz="0 0 0" rpy="0 0 0" />
+            <mass value="5" />
+            <inertia ixx="0.001" iyy="0.001" izz="0.001" ixy="0" ixz="0" iyz="0" />
+        </inertial>
+        <visual>
+            <origin xyz="0 0 0 " rpy="0 0 0" />
+            <geometry>
+                <mesh filename="${CS225A_URDF_FOLDER}/test_objects/meshes/visual/welcome_sign.obj" />
+            </geometry>
+            <material name="material">
+                <color rgba="0.66 0.95 16 0.8" />
+            </material>
+        </visual>
+    </dynamic_object>
+
 	<light name="light1" type="directional">
 		<position xyz="2.0 2.0 2.0" />
 		<lookat xyz="0.0 0.0 0.0" />

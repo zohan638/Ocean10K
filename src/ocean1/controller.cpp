@@ -29,6 +29,7 @@ using namespace Sai2Common::ChaiHapticDriverKeys;
 
 const double MAX_HAPTIC_FORCE = 3.0;
 const double THRESHOLD = 1.0;
+const double KS = 0.001;
 bool runloop = false;
 void sighandler(int){runloop = false;}
 
@@ -129,9 +130,10 @@ int main() {
 		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_STIFFNESS_KEY_SUFFIX, 0)),
 		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_DAMPING_KEY_SUFFIX, 0)),
 		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_FORCE_KEY_SUFFIX, 0)));
+	Matrix3d left_device_base_rotation_in_world = AngleAxisd(M_PI, Vector3d::UnitZ()).toRotationMatrix();
     auto haptic_controller_left =
 		make_shared<Sai2Primitives::HapticDeviceController>(
-			device_limits_left, robot->transformInWorld(link_names[0]), device_home_pose, AngleAxisd(M_PI, Vector3d::UnitZ()).toRotationMatrix());
+			device_limits_left, robot->transformInWorld(link_names[0]), device_home_pose, left_device_base_rotation_in_world);
 	haptic_controller_left->setScalingFactors(3.5);
 	haptic_controller_left->setReductionFactorForce(0.1);
 	haptic_controller_left->setHapticControlType(Sai2Primitives::HapticControlType::HOMING);
@@ -139,14 +141,16 @@ int main() {
 	haptic_controller_left->setVariableDampingGainsPos(vector<double>{0.05, 0.15}, vector<double>{10, 40});
 	Sai2Primitives::HapticControllerInput haptic_input_left;
 	Sai2Primitives::HapticControllerOtuput haptic_output_left;
+	auto haptic_init_position_left = haptic_input_left.robot_position;
 	
 	Sai2Primitives::HapticDeviceController::DeviceLimits device_limits_right(
 		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_STIFFNESS_KEY_SUFFIX, 1)),
 		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_DAMPING_KEY_SUFFIX, 1)),
-		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_FORCE_KEY_SUFFIX, 1)));	
+		redis_client.getEigen(Sai2Common::ChaiHapticDriverKeys::createRedisKey(MAX_FORCE_KEY_SUFFIX, 1)));
+	Matrix3d right_device_base_rotation_in_world = AngleAxisd(M_PI, Vector3d::UnitZ()).toRotationMatrix();
     auto haptic_controller_right =
 		make_shared<Sai2Primitives::HapticDeviceController>(
-			device_limits_right, robot->transformInWorld(link_names[1]), device_home_pose, AngleAxisd(M_PI, Vector3d::UnitZ()).toRotationMatrix());
+			device_limits_right, robot->transformInWorld(link_names[1]), device_home_pose, right_device_base_rotation_in_world);
 	haptic_controller_right->setScalingFactors(3.5);
 	haptic_controller_right->setReductionFactorForce(0.1);
 	haptic_controller_right->setHapticControlType(Sai2Primitives::HapticControlType::HOMING);
@@ -154,6 +158,7 @@ int main() {
 	haptic_controller_right->setVariableDampingGainsPos(vector<double>{0.05, 0.15}, vector<double>{10, 40});
 	Sai2Primitives::HapticControllerInput haptic_input_right;
 	Sai2Primitives::HapticControllerOtuput haptic_output_right;
+	auto haptic_init_position_right = haptic_input_right.robot_position;
     
 	for (int i=0; i<2; i++) {
 		redis_client.setInt(Sai2Common::ChaiHapticDriverKeys::createRedisKey(SWITCH_PRESSED_KEY_SUFFIX, i),
@@ -285,7 +290,13 @@ int main() {
 	runloop = true;
 	double control_freq = 1000;
 	Sai2Common::LoopTimer timer(control_freq, 1e6);
-
+	double prev_time = timer.elapsedSimTime();
+	auto prev_left_goal_position = pose_tasks["endEffector_left"]->getCurrentPosition();
+	auto prev_right_goal_position = pose_tasks["endEffector_right"]->getCurrentPosition();
+	auto curr_haptic_position_left = pose_tasks["endEffector_left"]->getCurrentPosition();
+	auto curr_haptic_position_right = pose_tasks["endEffector_right"]->getCurrentPosition();
+	// haptic_controller_left->setScalingFactors(0.5, 1.0);
+	// haptic_controller_right->setScalingFactors(0.5, 1.0);
 	while (runloop) {
 		timer.waitForNextLoop();
 		const double time = timer.elapsedSimTime();
@@ -294,6 +305,8 @@ int main() {
 		robot->setQ(redis_client.getEigen(JOINT_ANGLES_KEY));
 		robot->setDq(redis_client.getEigen(JOINT_VELOCITIES_KEY));
 		robot->updateModel();
+
+		Matrix3d body_rotation_in_world = robot->rotationInWorld("Body");
 
 		// robot_controller->updateControllerTaskModels();
 
@@ -462,9 +475,32 @@ int main() {
 			// cout << "???? robot goal position: \n";
 			// cout << haptic_output_left.robot_goal_position;
 			// cout << "\n\n";
-			pose_tasks["endEffector_left"]->setGoalPosition(haptic_output_left.robot_goal_position);
+			
+			auto diff = haptic_output_left.robot_goal_position - pose_tasks["endEffector_left"]->getCurrentPosition();
+
+			pose_tasks["endEffector_left"]->setGoalPosition(
+				base_task->getCurrentPosition()
+				+ robot->position(control_links[0], control_points[0])
+				// + pose_tasks["endEffector_left"]->getCurrentPosition()
+				+ left_device_base_rotation_in_world * haptic_input_left.device_position * (time - prev_time) * KS
+				// haptic_output_left.robot_current_position - prev_left_goal_position + haptic_output_left.robot_goal_position * (time - prev_time) * KS
+				// curr_haptic_position_left + (haptic_output_left.robot_goal_position - haptic_init_position_left)
+			);
 			command_torques += pose_tasks["endEffector_left"]->computeTorques();
-			pose_tasks["endEffector_right"]->setGoalPosition(haptic_output_right.robot_goal_position);
+
+			auto diff_right = haptic_output_right.robot_goal_position - pose_tasks["endEffector_right"]->getCurrentPosition();
+			pose_tasks["endEffector_right"]->setGoalPosition(
+				base_task->getCurrentPosition()
+				+ robot->position(control_links[1], control_points[1])
+				// + haptic_output_right.robot_goal_position
+				// + pose_tasks["endEffector_right"]->getCurrentPosition()
+				+ right_device_base_rotation_in_world * haptic_input_right.device_position * (time - prev_time) * KS
+				// + haptic_input_left.R_world_to_haptic_frame * haptic_input_right.device_position * (time - prev_time) * KS;
+				// pose_tasks["endEffector_right"]->getCurrentPosition() - prev_right_goal_position + haptic_output_right.robot_goal_position * (time - prev_time) * KS
+				// curr_haptic_position_right + (haptic_output_right.robot_goal_position - haptic_init_position_right)
+			);
+			auto curr_haptic_position_left = pose_tasks["endEffector_left"]->getCurrentPosition();
+			auto curr_haptic_position_right = pose_tasks["endEffector_right"]->getCurrentPosition();
 			command_torques += pose_tasks["endEffector_right"]->computeTorques();
 
 			// int i = 0;
@@ -501,6 +537,9 @@ int main() {
         }
 		// execute redis write callback
 		redis_client.setEigen(JOINT_TORQUES_COMMANDED_KEY, command_torques);
+		prev_time = time;
+		prev_left_goal_position = haptic_output_left.robot_goal_position;
+		prev_right_goal_position = haptic_output_right.robot_goal_position;
 	}
 	}
 	timer.stop();
