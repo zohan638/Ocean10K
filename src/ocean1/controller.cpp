@@ -527,9 +527,29 @@ int main() {
 				haptic_controller_left->setHapticControlType(Sai2Primitives::HapticControlType::MOTION_MOTION);
 				haptic_controller_left->setDeviceControlGains(350.0, 15.0);
 			}
+
 			if (haptic_controller_right->getHapticControlType() == Sai2Primitives::HapticControlType::HOMING) {
 				haptic_controller_right->setHapticControlType(Sai2Primitives::HapticControlType::MOTION_MOTION);
 				haptic_controller_right->setDeviceControlGains(350.0, 15.0);
+			}
+			// clutch
+			if (haptic_controller_left->getHapticControlType() == Sai2Primitives::HapticControlType::MOTION_MOTION && haptic_button_is_pressed && !haptic_button_was_pressed) {
+				haptic_controller_left->setHapticControlType(
+					Sai2Primitives::HapticControlType::CLUTCH
+				);
+			} else if (haptic_controller_left->getHapticControlType() == Sai2Primitives::HapticControlType::CLUTCH && !haptic_button_is_pressed && haptic_button_was_pressed) {
+				haptic_controller_left->setHapticControlType(
+					Sai2Primitives::HapticControlType::MOTION_MOTION
+				);
+			}
+			if (haptic_controller_right->getHapticControlType() == Sai2Primitives::HapticControlType::MOTION_MOTION && haptic_button_is_pressed && !haptic_button_was_pressed) {
+				haptic_controller_right->setHapticControlType(
+					Sai2Primitives::HapticControlType::CLUTCH
+				);
+			} else if (haptic_controller_right->getHapticControlType() == Sai2Primitives::HapticControlType::CLUTCH && !haptic_button_is_pressed && haptic_button_was_pressed) {
+				haptic_controller_right->setHapticControlType(
+					Sai2Primitives::HapticControlType::MOTION_MOTION
+				);
 			}
 
 			// posture task and coriolis compensation
