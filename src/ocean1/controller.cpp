@@ -350,21 +350,33 @@ int main() {
 			}
 		} else if (state == MOTION) {
             // update body task model
-			int j = 0;
-
-			endEffectorPosSum = Vector3d(0, 0, 0);
-			for (auto name : control_links) {
-				endEffectorPosSum += robot->position(control_links[j], control_points[j]);
-				++j;
-			}	
-
-			endEffectorPosAverage = endEffectorPosSum/2;
-			goalBodyPosition = endEffectorPosAverage - endEffectorToBodyDistance; //Calculate the body position as the end effector location minus some offset
-
-			leftHandPos = robot->position("endEffector_left", Vector3d(0, 0, 0));
-			rightHandPos = robot->position("endEffector_right", Vector3d(0, 0, 0));
-			handDifference = leftHandPos - rightHandPos; //Get vector between end effectors
-			goalBodyOrientation = calculate_rotations(handDifference, handReference); //Calculate the angle between the reference vector between end effectors and the current one
+            //NEW CODE
+            int j = 0;
+            endEffectorPosSum = Vector3d(0, 0, 0);
+            for (auto name : control_links) {
+                endEffectorPosSum += (robot->position(control_links[j], control_points[j]));
+                ++j;
+            }
+            endEffectorPosAverage = endEffectorPosSum / 2.;
+            cout << endEffectorPosAverage.transpose() << endl;
+            j = 0;
+            auto ref_vec = Vector3d(0.9, 0.15, 0.6);
+            for (auto ee_pos : endEffectorPosAverage){
+                if (abs(ee_pos) >= ref_vec[j]){
+                    goalBodyPosition[j] += 0.01 * (ee_pos - ((ee_pos / abs(ee_pos)) * ref_vec[j]));
+                }
+                ++j;
+            }
+            // if (((endEffectorPosAverage).cwiseAbs().array() >= 
+            //     Vector3d(0.2, 0.2, 0.2).array()).any()){
+            //     cout << "here" << endl;
+            // }
+            //Calculate the body position as the end effector location minus some offset
+            leftHandPos = robot->position("endEffector_left", Vector3d(0, 0, 0));
+            rightHandPos = robot->position("endEffector_right", Vector3d(0, 0, 0));
+            handDifference = leftHandPos - rightHandPos; //Get vector between end effectors
+            goalBodyOrientation = calculate_rotations(handDifference, handReference); //Calculate the angle between the reference vector between end effectors and the current one
+            //END NEW CODE
 
             N_prec.setIdentity();
 			
