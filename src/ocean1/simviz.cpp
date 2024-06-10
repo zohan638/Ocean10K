@@ -29,6 +29,13 @@ void sighandler(int){fSimulationRunning = false;}
 using namespace Eigen;
 using namespace std;
 
+// States 
+enum State {
+	THIRD_PERSON = 0, 
+	FIRST_PERSON = 1,
+	DEBUG_CAM 
+};
+
 // mutex and globals
 VectorXd ui_torques;
 mutex mutex_torques, mutex_update;
@@ -37,13 +44,37 @@ mutex mutex_torques, mutex_update;
 Vector3d newCamLookat;
 Vector3d newCamVert;
 Vector3d newCamPos;
+const double GROUND_Z = 0.0; // z-coordinate of the ground plane
+const double TOUCH_TOLERANCE = 0.05; // tolerance to check if the object is touching the ground
+const double GROUND_X_MIN = -7.0; // x-coordinate min boundary of the ground
+const double GROUND_X_MAX = 7.0; // x-coordinate max boundary of the ground
+const double GROUND_Y_MIN = -6.0; // y-coordinate min boundary of the ground
+const double GROUND_Y_MAX = 6.0; // y-coordinate max boundary of the ground
+int score = 0; // score variable
+const int MAX_SCORE = 3; // Maximum score to finish the game
+
+// map of flags for key presses
+namespace {
+map<int, bool> key_pressed = {
+	{GLFW_KEY_P, false},
+	{GLFW_KEY_L, false},
+	{GLFW_KEY_W, false},
+	{GLFW_KEY_O, false},
+	{GLFW_KEY_Q, false},
+	{GLFW_KEY_W, false},
+	{GLFW_KEY_E, false},
+	{GLFW_KEY_SPACE, false}
+};
+map<int, bool> key_was_pressed = key_pressed;
+}
 
 // specify urdf and robots 
 static const string robot_name = "ocean1";
 static const string camera_name = "camera_fixed";
 
 // dynamic objects information
-const vector<std::string> object_names = {"cup", "bottle"};
+const vector<std::string> object_names = {"welcome_sign", "sand", "coralFinal", "whale_fall"};
+//const vector<std::string> object_names = {"cup"};
 vector<Affine3d> object_poses;
 vector<VectorXd> object_velocities;
 const int n_objects = object_names.size();
@@ -73,6 +104,8 @@ int main() {
 	//graphics->showLinkFrame(true, robot_name, "link7", 0.15);  // can add frames for different links
 	// graphics->getCamera(camera_name)->setClippingPlanes(0.1, 50);  // set the near and far clipping planes 
 	graphics->addUIForceInteraction(robot_name);
+	//graphics->addLabel("TrashCount", "camera_fixed");
+
 
 	// load robots
 	auto robot = std::make_shared<Sai2Model::Sai2Model>(robot_file, false);
@@ -103,8 +136,8 @@ int main() {
     sim->setCollisionRestitution(0.0);
 
     // set co-efficient of friction
-    sim->setCoeffFrictionStatic(0.0);
-    sim->setCoeffFrictionDynamic(0.0);
+    sim->setCoeffFrictionStatic(0.5);
+    sim->setCoeffFrictionDynamic(0.5);
 
 	/*------- Set up visualization -------*/
 	// init redis client values 
@@ -117,11 +150,35 @@ int main() {
 
 	// start simulation thread
 	thread sim_thread(simulation, sim);
+
+	redis_client.set(CONTROLLER_SWITCH, "0");
 		
 	VectorXd robot_q = robot->q(); //Makes robot_q the joint angles of the robot (since the body is prismatic, this is fine)
 
+	//int state = FIRST_PERSON;
+	// int state = THIRD_PERSON;
+	// int prev_state = THIRD_PERSON;
+	int state = FIRST_PERSON;
+	int prev_state = FIRST_PERSON;
+
 	// while window is open:
 	while (graphics->isWindowOpen()) {
+		for (auto& key : key_pressed) {
+			key_pressed[key.first] = graphics->isKeyPressed(key.first);
+		}
+
+		if (key_pressed.at(GLFW_KEY_SPACE) && !key_was_pressed.at(GLFW_KEY_SPACE)) {
+			redis_client.set(CONTROLLER_SWITCH, "1");
+			if (state == DEBUG_CAM) {
+				state = FIRST_PERSON;
+				prev_state = DEBUG_CAM;
+			} else {
+				state = DEBUG_CAM;
+				prev_state = FIRST_PERSON;
+			}
+		}
+		key_was_pressed = key_pressed;
+
 		robot_q = redis_client.getEigen(JOINT_ANGLES_KEY); //Updates the joint angles on each iteration
         graphics->updateRobotGraphics(robot_name, robot_q);
 		{
@@ -134,14 +191,35 @@ int main() {
 		graphics->updateDisplayedForceSensor(sim->getAllForceSensorData()[1]);
 		graphics->renderGraphicsWorld();
 
-		newCamPos = robot_q.head(3) + Vector3d(-2, 0, 3); //Sets the camera position
+		if (state == FIRST_PERSON) {
+			newCamPos = robot_q.head(3) + Vector3d(0.4, 0, 0.5); //Sets the camera position 
+			//newCamPos = robot_q.head(3) + Vector3d(0.7, 0, -0.1); //Sets the camera position //Comment out if want default camera
+			newCamLookat = robot_q.head(3) + Vector3d(1, 0, 0.5);
+			//newCamLookat = robot_q.head(3) + Vector3d(1, 0, -0.5); //Tells the camera what to look at 
+		} else if (state == THIRD_PERSON) {
+			newCamPos = robot_q.head(3) + Vector3d(0.0, 0, 1.5); //Sets the camera position 
+			newCamLookat = robot_q.head(3) + Vector3d(1, 0, 0.7); //Tells the camera what to look at 
+		} else {
+			newCamPos = Vector3d(-4.0, 1.0, 3.0); //Sets the camera position 
+			newCamLookat = Vector3d(0, 0, 0); //Tells the camera what to look at 
+
+			
+		}
+		// newCamPos = robot_q.head(3) + Vector3d(0.9, 0, 1.5); //Sets the camera position //Comment out if want default camera
+		// newCamLookat = robot_q.head(3) + Vector3d(1, 0, -0.5); //Tells the camera what to look at //Comment out if want default camera
 		newCamVert = Vector3d::UnitZ(); //Sets the reference vertical for the camera
-		newCamLookat = robot_q.head(3); //Tells the camera what to look at
 		
+		       
+       //int TrashCount = 1;
+       //static const string TextDisplay = "Corals successfully relocated:";
+       //static const string result = TextDisplay + std::to_string(score);
+
+       //graphics->updateLabel("TrashCount", result, 100, 15);  // label name, actual label text, x pixel coordinate, y pixel coordinate
+
 		
 		graphics->renderGraphicsWorld();
-		// graphics->setCameraPose(camera_name, newCamPos, newCamVert, newCamLookat); //Updates the camera pose
-		// graphics->render(camera_name); //Renders the new camera
+		graphics->setCameraPose(camera_name, newCamPos, newCamVert, newCamLookat); //Updates the camera pose
+		graphics->render(camera_name); //Renders the new camera
 
 		{
 			lock_guard<mutex> lock(mutex_torques);
@@ -181,6 +259,7 @@ void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
 			sim->setJointTorques(robot_name, control_torques + ui_torques);
 		}
 		sim->integrate();
+		
 		// force sensor data
 		auto force_data = sim->getAllForceSensorData();
 		for (auto force : force_data) {
@@ -194,13 +273,54 @@ void simulation(std::shared_ptr<Sai2Simulation::Sai2Simulation> sim) {
         redis_client.setEigen(JOINT_VELOCITIES_KEY, sim->getJointVelocities(robot_name));
 
 		// update object information 
-		{
-			lock_guard<mutex> lock(mutex_update);
-			for (int i = 0; i < n_objects; ++i) {
-				object_poses[i] = sim->getObjectPose(object_names[i]);
-				object_velocities[i] = sim->getObjectVelocity(object_names[i]);
-			}
-		}
+         {
+           lock_guard<mutex> lock(mutex_update);
+           for (int i = 0; i < n_objects; ++i) {
+               object_poses[i] = sim->getObjectPose(object_names[i]);
+               object_velocities[i] = sim->getObjectVelocity(object_names[i]);
+               // Check if object is within the ground boundaries and touching the ground
+               Vector3d object_pos = object_poses[i].translation();
+			   if (object_names[i] == "coralFinal"){
+				if (object_pos(2) < 0.5){
+					object_pos(2) = 0.5;
+				}
+				if (
+                   object_pos.x() >= GROUND_X_MIN &&
+                   object_pos.x() <= GROUND_X_MAX &&
+                   object_pos.y() >= GROUND_Y_MIN &&
+                   object_pos.y() <= GROUND_Y_MAX) {
+					object_pos(0) = 0.0;
+					object_pos(1) = 0.0;
+                   object_pos(2) = 0.5;
+				   object_velocities[i].setZero();
+                   // Move the object slightly above the ground to prevent multiple scoring
+                   // sim->setObjectPosition(object_names[i], object_pos + Vector3d(0, 0, TOUCH_TOLERANCE + 0.01));
+
+                //    // Check if maximum score is reached
+                //    if (score >= MAX_SCORE) {
+                //        fSimulationRunning = false;
+                //        break;
+                //    }
+               }
+			   }
+               if (object_pos.z() <= (GROUND_Z + TOUCH_TOLERANCE) &&
+                   object_pos.z() >= (GROUND_Z - TOUCH_TOLERANCE) &&
+                   object_pos.x() >= GROUND_X_MIN &&
+                   object_pos.x() <= GROUND_X_MAX &&
+                   object_pos.y() >= GROUND_Y_MIN &&
+                   object_pos.y() <= GROUND_Y_MAX) {
+                   score++;
+                   // Move the object slightly above the ground to prevent multiple scoring
+                   // sim->setObjectPosition(object_names[i], object_pos + Vector3d(0, 0, TOUCH_TOLERANCE + 0.01));
+
+                //    // Check if maximum score is reached
+                //    if (score >= MAX_SCORE) {
+                //        fSimulationRunning = false;
+                //        break;
+                //    }
+               }
+           }
+       }
 	}
 	timer.stop();
 	cout << "\nSimulation loop timer stats:\n";
