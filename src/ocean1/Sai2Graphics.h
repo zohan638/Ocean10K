@@ -18,6 +18,8 @@
 #include <GLFW/glfw3.h>	 //must be loaded after loading opengl/glew
 // clang-format on
 
+#include <unordered_map>
+
 namespace Sai2Graphics {
 
 class Sai2Graphics {
@@ -35,6 +37,18 @@ public:
 	 */
 	void render(const std::string& camera_name);
 
+		/**
+	 * @brief Sets the pose of the camera in the parent frame
+	 * @param camera_name Camera name.
+	 * @param position Position of the camera.
+	 * @param vertical Up vector for the camera.
+	 * @param lookat Point the camera is to look at.
+	 */
+	void setCameraPose(const std::string& camera_name,
+					   const Eigen::Vector3d& position,
+					   const Eigen::Vector3d& vertical,
+					   const Eigen::Vector3d& lookat);
+
 	/**
 	 * @brief Creates a Chai graphics interface object that contains a visual
 	 * model of the virtual world.
@@ -42,10 +56,12 @@ public:
 	 * virtual world (urdf and yml files supported).
 	 * @param verbose To display information about the robot model creation in
 	 * the terminal or not.
+	 * @param headless To create a display window or not (true if using MultiWorldView)
 	 */
 	Sai2Graphics(const std::string& path_to_world_file,
 				 const std::string& window_name = "sai2 world",
-				 bool verbose = false);
+				 bool verbose = false,
+				 bool headless = false);
 
 	// dtor
 	~Sai2Graphics();
@@ -74,7 +90,16 @@ public:
 	 *
 	 * @param camera_name the name of the camera to display
 	 */
-	void renderGraphicsWorld();
+	void renderGraphicsWorld(const std::string& render_camera_name = "");
+
+	/**
+	 * @brief sets the glfw window pointer 
+	 * 
+	 * @param window 
+	 */
+	void setWindow(GLFWwindow* window) {
+		_window = window;
+	}
 
 	/**
 	 * @brief remove all interactions widgets
@@ -138,6 +163,9 @@ public:
 		const std::string& object_name, const Eigen::Affine3d& object_pose,
 		const Eigen::Vector6d& object_velocity = Eigen::Vector6d::Zero());
 
+	void showObjectLinkFrame(bool show_frame, const std::string& object_name,
+							 const double frame_pointer_length = 0.03);
+
 	Eigen::VectorXd getRobotJointPos(const std::string& robot_name);
 
 	Eigen::Affine3d getObjectPose(const std::string& object_name);
@@ -154,32 +182,7 @@ public:
 	*/
 	void showLinkFrame(bool show_frame, const std::string& robot_name,
 					   const std::string& link_name = "",
-					   const double frame_pointer_length = 0.03);
-
-	/**
-	 * @brief Return the pose of the camera in the parent frame
-	 * @param camera_name Camera name.
-	 * @param ret_position Position of the camera.
-	 * @param ret_vertical Up vector for the camera.
-	 * @param ret_lookat Point the camera is looking at.
-	 */
-	void getCameraPose(const std::string& camera_name,
-					   Eigen::Vector3d& ret_position,
-					   Eigen::Vector3d& ret_vertical,
-					   Eigen::Vector3d& ret_lookat);
-
-	/**
-	 * @brief Sets the pose of the camera in the parent frame
-	 * @param camera_name Camera name.
-	 * @param position Position of the camera.
-	 * @param vertical Up vector for the camera.
-	 * @param lookat Point the camera is to look at.
-	 */
-	void setCameraPose(const std::string& camera_name,
-					   const Eigen::Vector3d& position,
-					   const Eigen::Vector3d& vertical,
-					   const Eigen::Vector3d& lookat);
-
+					   const double frame_pointer_length = 0.20);
 
 	/**
 	 * @brief Render wire mesh for a particular link or all links on a robot.
@@ -189,6 +192,10 @@ public:
 	 */
 	void showWireMesh(bool show_wiremesh, const std::string& robot_name,
 					  const std::string& link_name = "");
+
+	void showTransparency(bool show_transparency, const std::string& robot_name, const double level);
+
+	void showObjectTransparency(bool show_transparency, const std::string& object_name, const double level);
 
 	void setBackgroundColor(const double red, const double green,
 							const double blue) {
@@ -208,10 +215,129 @@ public:
 		return glfwGetKey(_window, key) == GLFW_PRESS;
 	}
 
+	void setRenderingEnabled(const bool rendering_enabled,
+							 const string robot_or_object_name,
+							 const string link_name = "");
+
+	bool modelExistsInWorld(const std::string& model_name) const
+	{
+		return robotExistsInWorld(model_name) || objectExistsInWorld(model_name);
+	}
+
+	bool robotExistsInWorld(const std::string& robot_name,
+									const std::string& link_name = "") const;
+
+	bool objectExistsInWorld(const std::string& object_name) const;
+
+	// functions related to frame buffer loading and saving
+	void addFrameBuffer(const std::string camera_name,
+						const int width = 1280, const int height = 720);
+	void saveFrameBuffer(const std::string camera_name, 
+						 const std::string fname);
+	void writeFrameBuffer(const std::string camera_name,
+						  const std::string fname);
+	std::vector<unsigned char> getFrameBuffer(const std::string camera_name);
+
+	// camera assignment to follow a robot link
+	void setCameraOnRobot(const std::string& camera_name,
+						  const std::string& robot_name,
+						  const std::string& link_name,
+						  const Eigen::Affine3d& rel_pose,
+						  const std::vector<int>& order = {2, 1});  // look at, up
+
+	void setCameraFov(const std::string& camera_name,
+					  const double& fov_rad);
+
+	/**
+	 * @brief Get pointer to Chai camera object.
+	 * @param camera_name Camera name.
+	 */
+	chai3d::cCamera* getCamera(const std::string& camera_name);
+
+	void clearWorld();
+
+	int getWindowWidth() { return _window_width; }
+	int getWindowHeight() { return _window_height; }
+
+	void duplicateRobot(const std::string& robot_name,
+						const int n_copies) {
+		
+	}
+
+	/**
+	 * @brief Add label
+	 * 
+	 * @param label_name label name to refer to in map
+	 * @param camera_name camera to render text to
+	 */
+	void addLabel(const std::string& label_name,
+				  const std::string& camera_name) {
+		auto font = chai3d::NEW_CFONTCALIBRI20();  // check https://www.chai3d.org/download/doc/html/namespacechai3d.html#af8ad087918683eb3afe1669c641f0516 for fonts
+		_labels[label_name] = new chai3d::cLabel(font);
+		_labels[label_name]->m_fontColor.setBlack();  
+		getCamera(camera_name)->m_frontLayer->addChild(_labels[label_name]);
+	}
+
+	/**
+	 * @brief Update label
+	 * 
+	 * @param label_name label name to refer to in map
+	 * @param text text to display 
+	 * @param x_location x pixel location
+	 * @param y_location y pixel location 
+	 */
+	void updateLabel(const std::string& label_name,
+					 const std::string& text,
+				     const int& x_location,
+					 const int& y_location = 15) {
+		_labels[label_name]->setText(text);
+		_labels[label_name]->setLocalPos(x_location, y_location);
+		// m_label[name]->->setLocalPos((int)(0.5 * (width - m_label[name]->->getWidth())), y_location);
+	}
+
+	/**
+	 * @brief Add spheres to the world 
+	 * 
+	 */
+	void addSphere(const Vector3d& origin, 
+				   const double radius,
+				   const int color_opt = 0) {
+		auto sphere = new chai3d::cShapeSphere(radius);
+		auto material = std::make_shared<chai3d::cMaterial>();
+		if (color_opt == 0) {
+			material->setGreenForest();
+		} else {
+			material->setRed();
+		}
+		sphere->setMaterial(material);
+		sphere->setLocalPos(chai3d::cVector3d(origin));
+		_world->addChild(sphere);
+	}
+
+	/**
+	 * @brief Add block to the world 
+	 * 
+	 * @param origin 
+	 * @param length 
+	 * @param width 
+	 * @param height 
+	 */
+	void addBlock(const Vector3d& origin,
+				  const double& length,
+				  const double& width,
+				  const double& height) {
+		auto box = new chai3d::cShapeBox(length, width, height);
+		auto material = std::make_shared<chai3d::cMaterial>();
+		material->setBlue();
+		box->setMaterial(material);
+		box->setLocalPos(chai3d::cVector3d(origin));
+		_world->addChild(box);
+	}
+
 private:
 	void initializeWorld(const std::string& path_to_world_file,
 						 const bool verbose);
-	void clearWorld();
+	// void clearWorld();
 
 	/**
 	 * @brief initialize the glfw window with the given window name
@@ -221,12 +347,27 @@ private:
 	void initializeWindow(const std::string& window_name);
 
 
-	/* CHAI specific interface */
+
 	/**
-	 * @brief Get pointer to Chai camera object.
+	 * @brief Return the pose of the camera in the parent frame
 	 * @param camera_name Camera name.
+	 * @param ret_position Position of the camera.
+	 * @param ret_vertical Up vector for the camera.
+	 * @param ret_lookat Point the camera is looking at.
 	 */
-	chai3d::cCamera* getCamera(const std::string& camera_name);
+	void getCameraPose(const std::string& camera_name,
+					   Eigen::Vector3d& ret_position,
+					   Eigen::Vector3d& ret_vertical,
+					   Eigen::Vector3d& ret_lookat);
+
+
+
+	/* CHAI specific interface */
+	// /**
+	//  * @brief Get pointer to Chai camera object.
+	//  * @param camera_name Camera name.
+	//  */
+	// chai3d::cCamera* getCamera(const std::string& camera_name);
 
 	/**
 	 * internal functions to find link
@@ -239,11 +380,6 @@ private:
 
 	void showLinkFrameRecursive(chai3d::cRobotLink* parent, bool show_frame,
 								const double frame_pointer_length);
-
-	bool robotExistsInGraphicsWorld(const std::string& robot_name,
-									const std::string& link_name = "") const;
-
-	bool objectExistsInGraphicsWorld(const std::string& object_name) const;
 
 	int findForceSensorDisplay(const std::string& robot_or_object_name,
 							   const std::string& link_name) const;
@@ -302,6 +438,15 @@ private:
 
 	int _window_width;
 	int _window_height;
+
+	/**
+	 * @brief used to store frame buffers for recording
+	 * 
+	 */
+	std::map<string, chai3d::cFrameBufferPtr> _frame_buffer;
+
+	std::map<std::string, chai3d::cLabel*> _labels;
+
 };
 
 }  // namespace Sai2Graphics
